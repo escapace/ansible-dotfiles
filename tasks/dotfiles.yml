@@ -1,0 +1,139 @@
+- name: create temporary directory
+  file:
+    path: "{{ dotfiles_tmp_directory }}"
+    owner: "{{ dotfiles_username }}"
+    group: "{{ dotfiles_username }}"
+    state: directory
+    mode: 0700
+
+- name: clone repository
+  git: repo={{ dotfiles_repo }}
+       dest={{ dotfiles_directory }}
+       recursive=yes
+       umask=027
+       update=no
+       depth=1
+  become: true
+  become_user: "{{ dotfiles_username }}"
+
+- name: clone vim repository
+  git: repo={{ dotfiles_vim_repo }}
+       dest={{ dotfiles_vim_directory }}
+       recursive=yes
+       umask=027
+       update=no
+       depth=1
+  become: true
+  become_user: "{{ dotfiles_username }}"
+
+- name: clone pyenv repository
+  git: repo={{ dotfiles_pyenv_repo }}
+       dest={{ dotfiles_pyenv_directory }}
+       recursive=yes
+       umask=027
+       update=no
+       depth=1
+  become: true
+  become_user: "{{ dotfiles_username }}"
+
+- name: clone pyenv_virtualenvwrapper repository
+  git: repo={{ dotfiles_pyenv_virtualenvwrapper_repo }}
+       dest={{ dotfiles_pyenv_virtualenvwrapper_directory }}
+       recursive=yes
+       umask=027
+       update=no
+       depth=1
+  become: true
+  become_user: "{{ dotfiles_username }}"
+
+- name: clone nvm repository
+  git: repo={{ dotfiles_nvm_repo }}
+       dest={{ dotfiles_nvm_directory }}
+       recursive=yes
+       umask=027
+       update=no
+       version={{ dotfiles_nvm_version }}
+  become: true
+  become_user: "{{ dotfiles_username }}"
+
+- name: clone rbenv repository
+  git: repo={{ dotfiles_rbenv_repo }}
+       dest={{ dotfiles_rbenv_directory }}
+       recursive=yes
+       umask=027
+       update=no
+  become: true
+  become_user: "{{ dotfiles_username }}"
+
+- name: clone ruby build repository
+  git: repo={{ dotfiles_rbenv_build_repo }}
+       dest={{ dotfiles_rbenv_build_directory }}
+       recursive=yes
+       umask=027
+       update=no
+  become: true
+  become_user: "{{ dotfiles_username }}"
+
+- name: download gvm installer
+  get_url:
+    owner: "{{ dotfiles_username }}"
+    group: "{{ dotfiles_username }}"
+    validate_certs: yes
+    url: "{{ dotfiles_gvm_installer }}"
+    dest: "{{ dotfiles_tmp_directory }}/gvm-installer"
+    mode: 0700
+
+- name: install gvm
+  shell: bash "{{ dotfiles_tmp_directory }}/gvm-installer"
+  become: true
+  become_user: "{{ dotfiles_username }}"
+  args:
+    chdir: "{{ dotfiles_directory }}"
+    warn: false
+    creates: "/home/{{ dotfiles_username }}/.gvm"
+
+- name: install dotfiles
+  shell: "./manage install"
+  become: true
+  become_user: "{{ dotfiles_username }}"
+  args:
+    chdir: "{{ dotfiles_directory }}"
+    warn: false
+    creates: "/home/{{ dotfiles_username }}/.zpreztorc"
+
+- name: install vim
+  shell: "./manage install"
+  become: true
+  become_user: "{{ dotfiles_username }}"
+  args:
+    chdir: "{{ dotfiles_vim_directory }}"
+    warn: false
+    creates: "{{ dotfiles_vim_directory }}/bundle/repos"
+
+- name: link .vimrc
+  file:
+    src: "{{ dotfiles_vim_directory }}/vimrc"
+    dest: "/home/{{ dotfiles_username }}/.vimrc"
+    owner: "{{ dotfiles_username }}"
+    group: "{{ dotfiles_username }}"
+    state: link
+
+- name: link .zshrc
+  file:
+    src: "{{ dotfiles_directory }}//zsh/runcoms/zshrc"
+    dest: "/home/{{ dotfiles_username }}/.zshrc"
+    owner: "{{ dotfiles_username }}"
+    group: "{{ dotfiles_username }}"
+    state: link
+    force: true
+
+- name: touch .vimrc
+  file:
+    path: "{{ dotfiles_vim_directory }}/vimrc"
+    state: touch
+  changed_when: false
+
+- name: remove temporary directory
+  file:
+    path: "{{ dotfiles_tmp_directory }}"
+    state: absent
