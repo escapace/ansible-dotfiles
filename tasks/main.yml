@@ -1,43 +1,9 @@
 ---
 
-- include_tasks: dependencies.yml
 
-- group: name={{ dotfiles_username }} state=present
-
-- user: name={{ dotfiles_username }} shell=/bin/zsh  group={{ dotfiles_username }}
-
-- authorized_key: user={{ dotfiles_username }} key={{ dotfiles_key }}
-
-- name: check groups
-  shell: /usr/bin/getent group | awk -F":" '{print $1}'
-  register: register_dotfiles_etc_groups
-  changed_when: false
-
-- name: add secondary groups
-  user: name={{ dotfiles_username }} groups={{ item }} append=yes
-  when: item in register_dotfiles_etc_groups.stdout_lines
-  with_items:
-    - mail
-    - sudo
-    - wheel
-    - vboxusers
-    - admin
-    - docker
-
-- name: ensure keyboard interactive group is present
-  group: name={{ dotfiles_keyboard_interactive_group }} system=true state=present
-  when: dotfiles_keyboard_interactive_group is defined and dotfiles_keyboard_interactive_group != ""
-
-- name: add keyboard interactive group
-  user: name={{ dotfiles_username }} groups={{ dotfiles_keyboard_interactive_group }} append=yes
-  when: dotfiles_keyboard_interactive_group is defined and dotfiles_keyboard_interactive_group != ""
-
-- name: Allow {{ dotfiles_username }} to have passwordless sudo
-  lineinfile:
-    dest: /etc/sudoers.d/dotfiles
-    create: yes
-    state: present
-    regexp: '^{{ dotfiles_username }}'
-    line: '{{ dotfiles_username }} ALL=(ALL) NOPASSWD: ALL'
+- fail:
+    msg: "Variable 'dotfiles_username' is not defined or empty"
+  when: ((dotfiles_username is undefined) or (dotfiles_username is none) or (dotfiles_username | trim == ''))
 
 - include_tasks: dotfiles.yml
+
