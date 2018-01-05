@@ -5,5 +5,7 @@
       provision_docker_inventory_group: "{{ groups['test-images'] }}"
 
 - hosts: test-images
+  vars:
+    dotfiles_username: test
   roles:
   - role: escapace.dotfiles

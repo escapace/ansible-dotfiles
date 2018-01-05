@@ -1,7 +1,7 @@
 ---
 
-dotfiles_username: l5x
-dotfiles_key: https://github.com/l5x.keys
+dotfiles_username:
+dotfiles_key:
 
 dotfiles_keyboard_interactive_group: kbd-interactive
 
