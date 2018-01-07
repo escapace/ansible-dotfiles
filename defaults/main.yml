@@ -2,8 +2,7 @@
 
 dotfiles_username:
 dotfiles_key:
-
-dotfiles_keyboard_interactive_group: kbd-interactive
+dotfiles_keyboard_interactive_group:
 
 dotfiles_tmp_directory: "/home/{{ dotfiles_username }}/.tmp"
 
