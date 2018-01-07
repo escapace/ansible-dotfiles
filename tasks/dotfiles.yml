@@ -29,11 +29,11 @@
 
 - name: ensure keyboard interactive group is present
   group: name={{ dotfiles_keyboard_interactive_group }} system=true state=present
-  when: dotfiles_keyboard_interactive_group is defined and dotfiles_keyboard_interactive_group != ""
+  when: not((dotfiles_keyboard_interactive_group is undefined) or (dotfiles_keyboard_interactive_group is none) or (dotfiles_keyboard_interactive_group | trim == ''))
 
 - name: add keyboard interactive group
   user: name={{ dotfiles_username }} groups={{ dotfiles_keyboard_interactive_group }} append=yes
-  when: dotfiles_keyboard_interactive_group is defined and dotfiles_keyboard_interactive_group != ""
+  when: not((dotfiles_keyboard_interactive_group is undefined) or (dotfiles_keyboard_interactive_group is none) or (dotfiles_keyboard_interactive_group | trim == ''))
 
 - name: Allow {{ dotfiles_username }} to have passwordless sudo
   lineinfile:
