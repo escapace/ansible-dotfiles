@@ -164,7 +164,7 @@
 
 - name: link .zshrc
   file:
-    src: "{{ dotfiles_directory }}//zsh/runcoms/zshrc"
+    src: "{{ dotfiles_directory }}/zsh/runcoms/zshrc"
     dest: "/home/{{ dotfiles_username }}/.zshrc"
     owner: "{{ dotfiles_username }}"
     group: "{{ dotfiles_username }}"
