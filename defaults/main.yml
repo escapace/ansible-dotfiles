@@ -12,12 +12,6 @@ dotfiles_directory: "/home/{{ dotfiles_username }}/dotfiles"
 dotfiles_vim_repo: https://github.com/l5x/vim.git
 dotfiles_vim_directory: "/home/{{ dotfiles_username }}/.vim"
 
-dotfiles_pyenv_repo: https://github.com/yyuu/pyenv.git
-dotfiles_pyenv_directory: "/home/{{ dotfiles_username }}/.pyenv"
-
-dotfiles_pyenv_virtualenvwrapper_repo: https://github.com/yyuu/pyenv.git
-dotfiles_pyenv_virtualenvwrapper_directory: "{{ dotfiles_pyenv_directory }}/plugins/pyenv-virtualenvwrapper"
-
 dotfiles_nvm_repo: https://github.com/creationix/nvm.git
 dotfiles_nvm_directory: "/home/{{ dotfiles_username }}/.nvm"
 dotfiles_nvm_version: v0.32.1
@@ -28,3 +22,4 @@ dotfiles_rbenv_build_repo: https://github.com/rbenv/ruby-build.git
 dotfiles_rbenv_build_directory: "/home/{{ dotfiles_username }}/.rbenv/plugins/ruby-build"
 
 dotfiles_gvm_installer: https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer
+dotfiles_pyenv_installer: https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer
