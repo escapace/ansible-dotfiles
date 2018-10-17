@@ -70,25 +70,23 @@
   become: true
   become_user: "{{ dotfiles_username }}"
 
-- name: clone pyenv repository
-  git: repo={{ dotfiles_pyenv_repo }}
-       dest={{ dotfiles_pyenv_directory }}
-       recursive=yes
-       umask=027
-       update=no
-       depth=1
-  become: true
-  become_user: "{{ dotfiles_username }}"
+- name: download pyenv installer
+  get_url:
+    owner: "{{ dotfiles_username }}"
+    group: "{{ dotfiles_username }}"
+    validate_certs: yes
+    url: "{{ dotfiles_pyenv_installer }}"
+    dest: "{{ dotfiles_tmp_directory }}/pyenv-installer"
+    mode: 0700
 
-- name: clone pyenv_virtualenvwrapper repository
-  git: repo={{ dotfiles_pyenv_virtualenvwrapper_repo }}
-       dest={{ dotfiles_pyenv_virtualenvwrapper_directory }}
-       recursive=yes
-       umask=027
-       update=no
-       depth=1
+- name: install pyenv
+  shell: bash "{{ dotfiles_tmp_directory }}/pyenv-installer"
   become: true
   become_user: "{{ dotfiles_username }}"
+  args:
+    chdir: "{{ dotfiles_directory }}"
+    warn: false
+    creates: "/home/{{ dotfiles_username }}/.pyenv"
 
 - name: clone nvm repository
   git: repo={{ dotfiles_nvm_repo }}
