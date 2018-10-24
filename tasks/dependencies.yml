@@ -5,30 +5,35 @@
     name: "{{ packages }}"
   vars:
     packages:
-     - bc
-     - tmux
+     - autoconf
      - automake
+     - bc
      - bison
      - bzip2
      - bzip2-devel
      - cmake
-     - vim
      - curl
      - gcc
-     - sudo
      - gcc-c++
      - git
      - glibc-devel
      - kernel-devel
+     - libtool
      - make
+     - ninja-build
      - openssl-devel
+     - pkgconfig
      - python-devel
      - readline-devel
+     - rsync
      - sqlite
      - sqlite-devel
+     - sudo
+     - tmux
+     - unzip
+     - vim
      - zlib-devel
      - zsh
-     - rsync
 
 - name: ensure a list of packages installed
   when: ansible_os_family == "Debian"
