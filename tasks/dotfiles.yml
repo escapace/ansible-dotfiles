@@ -54,6 +54,7 @@
   git: repo={{ dotfiles_repo }}
        dest={{ dotfiles_directory }}
        recursive=yes
+       version={{ dotfiles_version }}
        umask=027
        update=no
        depth=1
