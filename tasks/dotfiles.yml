@@ -1,24 +1,30 @@
 - include_tasks: dependencies.yml
 
-- group: name={{ dotfiles_username }} state=present
+- name: ensure {{ dotfiles_username }} group is present
+  group: name={{ dotfiles_username }} state=present
 
-- user: name={{ dotfiles_username }} shell=/bin/zsh  group={{ dotfiles_username }}
+- name: ensure {{ dotfiles_username }} user is present
+  user: name={{ dotfiles_username }} shell=/bin/zsh  group={{ dotfiles_username }}
 
 - name: set authorized key
   authorized_key:
     user: "{{ dotfiles_username }}"
     state: present
     key: "{{ dotfiles_key }}"
-  when: not((dotfiles_key is undefined) or (dotfiles_key is none) or (dotfiles_key | trim == ''))
+  when: not((dotfiles_key is undefined) or (dotfiles_key is none) or (dotfiles_key | trim | length == 0))
 
 - name: check groups
-  shell: /usr/bin/getent group | awk -F":" '{print $1}'
-  register: register_dotfiles_etc_groups
+  shell: |
+    set -o pipefail
+    /usr/bin/getent group | awk -F":" '{print $1}'
+  args:
+    executable: /bin/bash
+  register: dotfiles_etc_groups
   changed_when: false
 
 - name: add secondary groups
   user: name={{ dotfiles_username }} groups={{ item }} append=yes
-  when: item in register_dotfiles_etc_groups.stdout_lines
+  when: item in dotfiles_etc_groups.stdout_lines
   with_items:
     - mail
     - sudo
@@ -29,11 +35,16 @@
 
 - name: ensure keyboard interactive group is present
   group: name={{ dotfiles_keyboard_interactive_group }} system=true state=present
-  when: not((dotfiles_keyboard_interactive_group is undefined) or (dotfiles_keyboard_interactive_group is none) or (dotfiles_keyboard_interactive_group | trim == ''))
+  when: not(
+    (dotfiles_keyboard_interactive_group is undefined) or
+    (dotfiles_keyboard_interactive_group is none) or
+    (dotfiles_keyboard_interactive_group | trim | length == 0))
 
 - name: add keyboard interactive group
   user: name={{ dotfiles_username }} groups={{ dotfiles_keyboard_interactive_group }} append=yes
-  when: not((dotfiles_keyboard_interactive_group is undefined) or (dotfiles_keyboard_interactive_group is none) or (dotfiles_keyboard_interactive_group | trim == ''))
+  when: not((dotfiles_keyboard_interactive_group is undefined) or
+    (dotfiles_keyboard_interactive_group is none) or
+    (dotfiles_keyboard_interactive_group | trim | length == 0))
 
 - name: Allow {{ dotfiles_username }} to have passwordless sudo
   lineinfile:
@@ -42,13 +53,6 @@
     state: present
     regexp: '^{{ dotfiles_username }}'
     line: '{{ dotfiles_username }} ALL=(ALL) NOPASSWD: ALL'
-- name: create temporary directory
-  file:
-    path: "{{ dotfiles_tmp_directory }}"
-    owner: "{{ dotfiles_username }}"
-    group: "{{ dotfiles_username }}"
-    state: directory
-    mode: 0700
 
 - name: clone repository
   git: repo={{ dotfiles_repo }}
@@ -71,6 +75,25 @@
   become: true
   become_user: "{{ dotfiles_username }}"
 
+- name: check if ~/.pyenv exists
+  stat:
+    path: "/home/{{ dotfiles_username }}/.pyenv"
+  register: dotfiles_stat_pyenv
+
+- name: check if ~/.gvm exists
+  stat:
+    path: "/home/{{ dotfiles_username }}/.gvm"
+  register: dotfiles_stat_gvm
+
+- name: create temporary directory
+  file:
+    path: "{{ dotfiles_tmp_directory }}"
+    owner: "{{ dotfiles_username }}"
+    group: "{{ dotfiles_username }}"
+    state: directory
+    mode: 0700
+  when: (dotfiles_stat_pyenv.stat.exists | bool) or (dotfiles_stat_gvm.stat.exists | bool)
+
 - name: download pyenv installer
   get_url:
     owner: "{{ dotfiles_username }}"
@@ -79,6 +102,7 @@
     url: "{{ dotfiles_pyenv_installer }}"
     dest: "{{ dotfiles_tmp_directory }}/pyenv-installer"
     mode: 0700
+  when: dotfiles_stat_pyenv.stat.exists | bool
 
 - name: install pyenv
   shell: bash "{{ dotfiles_tmp_directory }}/pyenv-installer"
@@ -88,6 +112,33 @@
     chdir: "{{ dotfiles_directory }}"
     warn: false
     creates: "/home/{{ dotfiles_username }}/.pyenv"
+  when: dotfiles_stat_pyenv.stat.exists | bool
+
+- name: download gvm installer
+  get_url:
+    owner: "{{ dotfiles_username }}"
+    group: "{{ dotfiles_username }}"
+    validate_certs: yes
+    url: "{{ dotfiles_gvm_installer }}"
+    dest: "{{ dotfiles_tmp_directory }}/gvm-installer"
+    mode: 0700
+  when: dotfiles_stat_gvm.stat.exists | bool
+
+- name: install gvm
+  shell: bash "{{ dotfiles_tmp_directory }}/gvm-installer"
+  become: true
+  become_user: "{{ dotfiles_username }}"
+  args:
+    chdir: "{{ dotfiles_directory }}"
+    warn: false
+    creates: "/home/{{ dotfiles_username }}/.gvm"
+  when: dotfiles_stat_gvm.stat.exists | bool
+
+- name: remove temporary directory
+  file:
+    path: "{{ dotfiles_tmp_directory }}"
+    state: absent
+  when: (dotfiles_stat_pyenv.stat.exists | bool) or (dotfiles_stat_gvm.stat.exists | bool)
 
 - name: clone nvm repository
   git: repo={{ dotfiles_nvm_repo }}
@@ -116,24 +167,6 @@
        update=no
   become: true
   become_user: "{{ dotfiles_username }}"
-
-- name: download gvm installer
-  get_url:
-    owner: "{{ dotfiles_username }}"
-    group: "{{ dotfiles_username }}"
-    validate_certs: yes
-    url: "{{ dotfiles_gvm_installer }}"
-    dest: "{{ dotfiles_tmp_directory }}/gvm-installer"
-    mode: 0700
-
-- name: install gvm
-  shell: bash "{{ dotfiles_tmp_directory }}/gvm-installer"
-  become: true
-  become_user: "{{ dotfiles_username }}"
-  args:
-    chdir: "{{ dotfiles_directory }}"
-    warn: false
-    creates: "/home/{{ dotfiles_username }}/.gvm"
 
 - name: install dotfiles
   shell: "./manage install"
@@ -175,8 +208,3 @@
     path: "{{ dotfiles_vim_directory }}/vimrc"
     state: touch
   changed_when: false
-
-- name: remove temporary directory
-  file:
-    path: "{{ dotfiles_tmp_directory }}"
-    state: absent
