@@ -92,7 +92,7 @@
     group: "{{ dotfiles_username }}"
     state: directory
     mode: 0700
-  when: (dotfiles_stat_pyenv.stat.exists | bool) or (dotfiles_stat_gvm.stat.exists | bool)
+  when: not ((dotfiles_stat_pyenv.stat.exists | bool) and (dotfiles_stat_gvm.stat.exists | bool))
 
 - name: download pyenv installer
   get_url:
@@ -102,7 +102,7 @@
     url: "{{ dotfiles_pyenv_installer }}"
     dest: "{{ dotfiles_tmp_directory }}/pyenv-installer"
     mode: 0700
-  when: dotfiles_stat_pyenv.stat.exists | bool
+  when: not dotfiles_stat_pyenv.stat.exists | bool
 
 - name: install pyenv
   shell: bash "{{ dotfiles_tmp_directory }}/pyenv-installer"
@@ -112,7 +112,7 @@
     chdir: "{{ dotfiles_directory }}"
     warn: false
     creates: "/home/{{ dotfiles_username }}/.pyenv"
-  when: dotfiles_stat_pyenv.stat.exists | bool
+  when: not dotfiles_stat_pyenv.stat.exists | bool
 
 - name: download gvm installer
   get_url:
@@ -122,7 +122,7 @@
     url: "{{ dotfiles_gvm_installer }}"
     dest: "{{ dotfiles_tmp_directory }}/gvm-installer"
     mode: 0700
-  when: dotfiles_stat_gvm.stat.exists | bool
+  when: not dotfiles_stat_gvm.stat.exists | bool
 
 - name: install gvm
   shell: bash "{{ dotfiles_tmp_directory }}/gvm-installer"
@@ -132,13 +132,12 @@
     chdir: "{{ dotfiles_directory }}"
     warn: false
     creates: "/home/{{ dotfiles_username }}/.gvm"
-  when: dotfiles_stat_gvm.stat.exists | bool
+  when: not dotfiles_stat_gvm.stat.exists | bool
 
 - name: remove temporary directory
   file:
     path: "{{ dotfiles_tmp_directory }}"
     state: absent
-  when: (dotfiles_stat_pyenv.stat.exists | bool) or (dotfiles_stat_gvm.stat.exists | bool)
 
 - name: clone nvm repository
   git: repo={{ dotfiles_nvm_repo }}
