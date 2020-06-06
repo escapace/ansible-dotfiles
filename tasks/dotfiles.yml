@@ -183,7 +183,7 @@
   args:
     chdir: "{{ dotfiles_vim_directory }}"
     warn: false
-    creates: "{{ dotfiles_vim_directory }}/bundle/repos"
+    creates: "{{ dotfiles_vim_directory }}/.ready"
 
 - name: link .vimrc
   file:
