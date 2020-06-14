@@ -4,7 +4,7 @@ galaxy_info:
   license: Apache-2.0
   min_ansible_version: 2.9
   author: Escapace
-  github_branch: master
+  github_branch: trunk
   platforms:
   - name: EL
     versions:
