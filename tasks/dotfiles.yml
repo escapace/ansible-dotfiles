@@ -49,6 +49,7 @@
 - name: Allow {{ dotfiles_username }} to have passwordless sudo
   lineinfile:
     dest: /etc/sudoers.d/dotfiles
+    mode: 0640
     create: yes
     state: present
     regexp: '^{{ dotfiles_username }}'
@@ -205,5 +206,8 @@
 - name: touch .vimrc
   file:
     path: "{{ dotfiles_vim_directory }}/vimrc"
+    owner: "{{ dotfiles_username }}"
+    group: "{{ dotfiles_username }}"
+    mode: 0640
     state: touch
   changed_when: false
