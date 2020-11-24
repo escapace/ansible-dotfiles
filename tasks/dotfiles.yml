@@ -55,6 +55,17 @@
     regexp: '^{{ dotfiles_username }}'
     line: '{{ dotfiles_username }} ALL=(ALL) NOPASSWD: ALL'
 
+- name: create directories
+  file:
+    path: "{{ item }}"
+    owner: "{{ dotfiles_username }}"
+    group: "{{ dotfiles_username }}"
+    state: directory
+    mode: 0750
+  with_items:
+    - "/home/{{ dotfiles_username }}/.local"
+    - "/home/{{ dotfiles_username }}/.local/bin"
+
 - name: clone repository
   git: repo={{ dotfiles_repo }}
        dest={{ dotfiles_directory }}
@@ -75,6 +86,22 @@
        depth=1
   become: true
   become_user: "{{ dotfiles_username }}"
+
+
+- name: check if nvim exists
+  stat:
+    path: "/home/{{ dotfiles_username }}/.local/bin/nvim"
+  register: dotfiles_stat_nvim
+
+- name: download nvim appimage
+  get_url:
+    owner: "{{ dotfiles_username }}"
+    group: "{{ dotfiles_username }}"
+    validate_certs: yes
+    url: "{{ dotfiles_nvim_appimage }}"
+    dest: "/home/{{ dotfiles_username }}/.local/bin/nvim"
+    mode: 0750
+  when: not dotfiles_stat_nvim.stat.exists | bool
 
 - name: check if ~/.pyenv exists
   stat:
@@ -177,7 +204,7 @@
     warn: false
     creates: "/home/{{ dotfiles_username }}/.zpreztorc"
 
-- name: install vim
+- name: install vim dotfiles
   shell: "./manage install"
   become: true
   become_user: "{{ dotfiles_username }}"

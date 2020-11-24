@@ -11,6 +11,7 @@
      - bzip2-devel
      - cmake
      - curl
+     - fuse
      - gcc
      - gcc-c++
      - git
