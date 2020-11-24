@@ -24,3 +24,5 @@ dotfiles_rbenv_build_directory: "/home/{{ dotfiles_username }}/.rbenv/plugins/ru
 
 dotfiles_gvm_installer: https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer
 dotfiles_pyenv_installer: https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer
+
+dotfiles_nvim_appimage: https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
