@@ -167,13 +167,13 @@
     path: "{{ dotfiles_tmp_directory }}"
     state: absent
 
-- name: clone nvm repository
-  git: repo={{ dotfiles_nvm_repo }}
-       dest={{ dotfiles_nvm_directory }}
+- name: clone nodenv repository
+  git: repo={{ dotfiles_nodenv_repo }}
+       dest={{ dotfiles_nodenv_directory }}
        recursive=yes
        umask=027
        update=no
-       version={{ dotfiles_nvm_version }}
+       version={{ dotfiles_nodenv_version }}
   become: true
   become_user: "{{ dotfiles_username }}"
 
@@ -204,15 +204,6 @@
     warn: false
     creates: "/home/{{ dotfiles_username }}/.zpreztorc"
 
-- name: install vim dotfiles
-  shell: "./manage install"
-  become: true
-  become_user: "{{ dotfiles_username }}"
-  args:
-    chdir: "{{ dotfiles_vim_directory }}"
-    warn: false
-    creates: "{{ dotfiles_vim_directory }}/.ready"
-
 - name: link .vimrc
   file:
     src: "{{ dotfiles_vim_directory }}/vimrc"
@@ -230,6 +221,16 @@
     state: link
     force: true
 
+- name: install vim dotfiles
+  shell: "sudo -i -u {{ dotfiles_username }} bash -c \"cd ~/.vim && ./manage install\""
+  become: true
+  become_user: "{{ dotfiles_username }}"
+  args:
+    executable: /usr/bin/zsh
+    chdir: "{{ dotfiles_vim_directory }}"
+    warn: false
+    creates: "{{ dotfiles_vim_directory }}/.ready"
+
 - name: touch .vimrc
   file:
     path: "{{ dotfiles_vim_directory }}/vimrc"
@@ -238,3 +239,4 @@
     mode: 0640
     state: touch
   changed_when: false
+
