@@ -19,4 +19,3 @@ galaxy_info:
 
 dependencies:
   - { role: escapace.epel }
-  - { role: escapace.packagecloud }

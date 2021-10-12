@@ -1,3 +1,15 @@
+- name: install zsh
+  dnf:
+    name: "{{ dotfiles_rpm_zsh }}"
+    disable_gpg_check: yes
+    state: present 
+
+- name: install tmux
+  dnf:
+    name: "{{ dotfiles_rpm_tmux }}"
+    disable_gpg_check: yes
+    state: present 
+
 - name: ensure a list of packages installed
   package:
     name: "{{ packages }}"
@@ -27,42 +39,7 @@
      - sqlite
      - sqlite-devel
      - sudo
-     - tmux
      - unzip
      - vim
      - zlib-devel
-     - zsh
-
-# - name: ensure a list of packages installed
-#   when: ansible_os_family == "Debian"
-#   package:
-#     name: "{{ packages }}"
-#   vars:
-#     packages:
-#      - bc
-#      - binutils
-#      - bison
-#      - build-essential
-#      - sudo
-#      - vim
-#      - cmake
-#      - curl
-#      - gcc
-#      - git
-#      - libbz2-dev
-#      - libncurses5-dev
-#      - libncursesw5-dev
-#      - libreadline-dev
-#      - libsqlite3-dev
-#      - libssl-dev
-#      - llvm
-#      - make
-#      - mercurial
-#      - python-dev
-#      - python3-dev
-#      - wget
-#      - xz-utils
-#      - zlib1g-dev
-#      - zsh
-#      - tmux
-#      - rsync
+     - mosh
