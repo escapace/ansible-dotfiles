@@ -2,13 +2,13 @@
   dnf:
     name: "{{ dotfiles_rpm_zsh }}"
     disable_gpg_check: yes
-    state: present 
+    state: present
 
 - name: install tmux
   dnf:
     name: "{{ dotfiles_rpm_tmux }}"
     disable_gpg_check: yes
-    state: present 
+    state: present
 
 - name: ensure a list of packages installed
   package:
@@ -40,6 +40,5 @@
      - sqlite-devel
      - sudo
      - unzip
-     - vim
      - zlib-devel
      - mosh

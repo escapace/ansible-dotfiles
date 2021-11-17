@@ -4,8 +4,8 @@ dotfiles_username:
 dotfiles_key:
 dotfiles_keyboard_interactive_group:
 
-dotfiles_rpm_tmux: "https://github.com/escapace/rpmbuild/releases/download/v1.2.3/tmux-3.2a-3.el8.x86_64.rpm" 
-dotfiles_rpm_zsh: "https://github.com/escapace/rpmbuild/releases/download/v1.2.3/zsh-5.8-6.el8.x86_64.rpm"
+dotfiles_rpm_tmux: "https://github.com/escapace/rpmbuild/releases/download/v1.3.0/tmux-3.2a-3.el8.{{ ansible_architecture }}.rpm"
+dotfiles_rpm_zsh: "https://github.com/escapace/rpmbuild/releases/download/v1.3.0/zsh-5.8-6.el8.{{ ansible_architecture }}.rpm"
 
 dotfiles_tmp_directory: "/home/{{ dotfiles_username }}/.tmp"
 
