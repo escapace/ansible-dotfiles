@@ -101,7 +101,12 @@
     url: "{{ dotfiles_nvim_appimage }}"
     dest: "/home/{{ dotfiles_username }}/.local/bin/nvim"
     mode: 0750
-  when: not dotfiles_stat_nvim.stat.exists | bool
+  when: not dotfiles_stat_nvim.stat.exists | bool and ansible_architecture == "x86_64"
+
+- name: install vim
+  package:
+    name: "vim"
+  when: ansible_architecture == "aarch64"
 
 - name: check if ~/.pyenv exists
   stat:
