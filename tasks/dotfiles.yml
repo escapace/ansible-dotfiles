@@ -182,6 +182,16 @@
   become: true
   become_user: "{{ dotfiles_username }}"
 
+- name: clone nodenv build repository
+  git: repo={{ dotfiles_nodenv_build_repo }}
+       dest={{ dotfiles_nodenv_build_directory }}
+       recursive=yes
+       umask=027
+       update=no
+       version={{ dotfiles_nodenv_build_version }}
+  become: true
+  become_user: "{{ dotfiles_username }}"
+
 - name: clone rbenv repository
   git: repo={{ dotfiles_rbenv_repo }}
        dest={{ dotfiles_rbenv_directory }}
@@ -216,6 +226,8 @@
     owner: "{{ dotfiles_username }}"
     group: "{{ dotfiles_username }}"
     state: link
+  become: true
+  become_user: "{{ dotfiles_username }}"
 
 - name: link .zshrc
   file:
@@ -225,6 +237,8 @@
     group: "{{ dotfiles_username }}"
     state: link
     force: true
+  become: true
+  become_user: "{{ dotfiles_username }}"
 
 - name: install vim dotfiles
   shell: "sudo -i -u {{ dotfiles_username }} bash -c \"cd ~/.vim && ./manage install\""
@@ -244,3 +258,5 @@
     mode: 0640
     state: touch
   changed_when: false
+  become: true
+  become_user: "{{ dotfiles_username }}"
