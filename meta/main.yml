@@ -9,13 +9,15 @@ galaxy_info:
   author: escapace
   github_branch: trunk
   platforms:
-  - name: EL
-    versions:
-    - 9
+    - name: EL
+      versions:
+        - 9
 
   galaxy_tags:
-  - escapace
-  - dotfiles
+    - escapace
+    - dotfiles
 
 dependencies:
   - { role: escapace.epel }
+  - { role: escapace.escapace_releases }
+  - { role: escapace.fedora_releases }

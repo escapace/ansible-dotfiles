@@ -1,44 +1,38 @@
-- name: install zsh
-  dnf:
-    name: "{{ dotfiles_rpm_zsh }}"
-    disable_gpg_check: yes
-    state: present
-
-- name: install tmux
-  dnf:
-    name: "{{ dotfiles_rpm_tmux }}"
-    disable_gpg_check: yes
-    state: present
+---
 
 - name: ensure a list of packages installed
-  package:
+  dnf:
     name: "{{ packages }}"
+    state: present
+    allowerasing: true
   vars:
     packages:
-     - autoconf
-     - automake
-     - bc
-     - bison
-     - bzip2
-     - bzip2-devel
-     - cmake
-     - curl
-     - fuse
-     - gcc
-     - gcc-c++
-     - git
-     - glibc-devel
-     - kernel-devel
-     - libtool
-     - make
-     - openssl-devel
-     - pkgconfig
-     - platform-python-devel
-     - readline-devel
-     - rsync
-     - sqlite
-     - sqlite-devel
-     - sudo
-     - unzip
-     - zlib-devel
-     - mosh
+      - autoconf
+      - automake
+      - bc
+      - bison
+      - bzip2
+      - bzip2-devel
+      - cmake
+      - curl
+      - fuse
+      - gcc
+      - gcc-c++
+      - git
+      - glibc-devel
+      - kernel-devel
+      - libtool
+      - make
+      - mosh
+      - openssl-devel
+      - pkgconfig
+      - platform-python-devel
+      - readline-devel
+      - rsync
+      - sqlite
+      - sqlite-devel
+      - sudo
+      - tmux
+      - unzip
+      - zlib-devel
+      - zsh

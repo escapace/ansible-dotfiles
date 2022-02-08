@@ -1,3 +1,5 @@
+---
+
 - include_tasks: dependencies.yml
 
 - name: ensure {{ dotfiles_username }} group is present
@@ -50,7 +52,7 @@
   lineinfile:
     dest: /etc/sudoers.d/dotfiles
     mode: 0640
-    create: yes
+    create: true
     state: present
     regexp: '^{{ dotfiles_username }}'
     line: '{{ dotfiles_username }} ALL=(ALL) NOPASSWD: ALL'
@@ -69,7 +71,7 @@
 - name: clone repository
   git: repo={{ dotfiles_repo }}
        dest={{ dotfiles_directory }}
-       recursive=yes
+       recursive=true
        version={{ dotfiles_version }}
        umask=027
        update=no
@@ -80,7 +82,7 @@
 - name: clone vim repository
   git: repo={{ dotfiles_vim_repo }}
        dest={{ dotfiles_vim_directory }}
-       recursive=yes
+       recursive=true
        umask=027
        update=no
        depth=1
@@ -97,7 +99,7 @@
   get_url:
     owner: "{{ dotfiles_username }}"
     group: "{{ dotfiles_username }}"
-    validate_certs: yes
+    validate_certs: true
     url: "{{ dotfiles_nvim_appimage }}"
     dest: "/home/{{ dotfiles_username }}/.local/bin/nvim"
     mode: 0750
@@ -131,7 +133,7 @@
   get_url:
     owner: "{{ dotfiles_username }}"
     group: "{{ dotfiles_username }}"
-    validate_certs: yes
+    validate_certs: true
     url: "{{ dotfiles_pyenv_installer }}"
     dest: "{{ dotfiles_tmp_directory }}/pyenv-installer"
     mode: 0700
@@ -151,7 +153,7 @@
   get_url:
     owner: "{{ dotfiles_username }}"
     group: "{{ dotfiles_username }}"
-    validate_certs: yes
+    validate_certs: true
     url: "{{ dotfiles_gvm_installer }}"
     dest: "{{ dotfiles_tmp_directory }}/gvm-installer"
     mode: 0700
@@ -175,7 +177,7 @@
 - name: clone nodenv repository
   git: repo={{ dotfiles_nodenv_repo }}
        dest={{ dotfiles_nodenv_directory }}
-       recursive=yes
+       recursive=true
        umask=027
        update=no
        version={{ dotfiles_nodenv_version }}
@@ -185,7 +187,7 @@
 - name: clone nodenv build repository
   git: repo={{ dotfiles_nodenv_build_repo }}
        dest={{ dotfiles_nodenv_build_directory }}
-       recursive=yes
+       recursive=true
        umask=027
        update=no
        version={{ dotfiles_nodenv_build_version }}
@@ -195,7 +197,7 @@
 - name: clone rbenv repository
   git: repo={{ dotfiles_rbenv_repo }}
        dest={{ dotfiles_rbenv_directory }}
-       recursive=yes
+       recursive=true
        umask=027
        update=no
   become: true
@@ -204,7 +206,7 @@
 - name: clone ruby build repository
   git: repo={{ dotfiles_rbenv_build_repo }}
        dest={{ dotfiles_rbenv_build_directory }}
-       recursive=yes
+       recursive=true
        umask=027
        update=no
   become: true
