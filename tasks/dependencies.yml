@@ -7,32 +7,61 @@
     allowerasing: true
   vars:
     packages:
-      - autoconf
-      - automake
       - bc
-      - bison
-      - bzip2
-      - bzip2-devel
-      - cmake
       - curl
       - fuse
-      - gcc
-      - gcc-c++
       - git
-      - glibc-devel
-      - kernel-devel
-      - libtool
-      - make
       - mosh
-      - openssl-devel
-      - pkgconfig
-      - platform-python-devel
-      - readline-devel
       - rsync
-      - sqlite
-      - sqlite-devel
       - sudo
       - tmux
       - unzip
-      - zlib-devel
       - zsh
+
+- name: install vim requirements
+  dnf:
+    name: "{{ packages }}"
+    state: present
+    allowerasing: true
+  vars:
+    packages:
+      - gcc
+      - gcc-c++
+
+- name: install pyenv requirements
+  dnf:
+    name: "{{ packages }}"
+    state: present
+    allowerasing: true
+  vars:
+    packages:
+      - gcc
+      - zlib-devel
+      - bzip2
+      - bzip2-devel
+      - readline-devel
+      - sqlite
+      - sqlite-devel
+      - openssl-devel
+      - tk-devel
+      - libffi-devel
+      - xz-devel
+
+- name: install rbenv requirements
+  dnf:
+    name: "{{ packages }}"
+    state: present
+    allowerasing: true
+  when: dotfiles_rbenv_install | bool
+  vars:
+    packages:
+      - gcc 
+      - make
+      - bzip2
+      - openssl-devel
+      - libyaml-devel
+      - libffi-devel
+      - readline-devel
+      - zlib-devel
+      - gdbm-devel
+      - ncurses-devel
