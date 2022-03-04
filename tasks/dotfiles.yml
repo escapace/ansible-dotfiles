@@ -202,6 +202,7 @@
        update=no
   become: true
   become_user: "{{ dotfiles_username }}"
+  when: dotfiles_rbenv_install | bool
 
 - name: clone ruby build repository
   git: repo={{ dotfiles_rbenv_build_repo }}
@@ -211,6 +212,7 @@
        update=no
   become: true
   become_user: "{{ dotfiles_username }}"
+  when: dotfiles_rbenv_install | bool
 
 - name: install dotfiles
   shell: "./manage install"
