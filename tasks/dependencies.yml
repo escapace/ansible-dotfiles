@@ -55,7 +55,7 @@
   when: dotfiles_rbenv_install | bool
   vars:
     packages:
-      - gcc 
+      - gcc
       - make
       - bzip2
       - openssl-devel
