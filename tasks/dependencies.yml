@@ -1,7 +1,7 @@
 ---
 
 - name: ensure a list of packages installed
-  dnf:
+  ansible.builtin.dnf:
     name: "{{ packages }}"
     state: present
     allowerasing: true
@@ -19,7 +19,7 @@
       - zsh
 
 - name: install vim requirements
-  dnf:
+  ansible.builtin.dnf:
     name: "{{ packages }}"
     state: present
     allowerasing: true
@@ -29,7 +29,7 @@
       - gcc-c++
 
 - name: install pyenv requirements
-  dnf:
+  ansible.builtin.dnf:
     name: "{{ packages }}"
     state: present
     allowerasing: true
@@ -48,7 +48,7 @@
       - xz-devel
 
 - name: install rbenv requirements
-  dnf:
+  ansible.builtin.dnf:
     name: "{{ packages }}"
     state: present
     allowerasing: true
