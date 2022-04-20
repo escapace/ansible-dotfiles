@@ -3,20 +3,20 @@
 - include_tasks: dependencies.yml
 
 - name: ensure {{ dotfiles_username }} group is present
-  group: name={{ dotfiles_username }} state=present
+  ansible.builtin.group: name={{ dotfiles_username }} state=present
 
 - name: ensure {{ dotfiles_username }} user is present
-  user: name={{ dotfiles_username }} shell=/bin/zsh  group={{ dotfiles_username }}
+  ansible.builtin.user: name={{ dotfiles_username }} shell=/bin/zsh  group={{ dotfiles_username }}
 
 - name: set authorized key
-  authorized_key:
+  ansible.posix.authorized_key:
     user: "{{ dotfiles_username }}"
     state: present
     key: "{{ dotfiles_key }}"
   when: not((dotfiles_key is undefined) or (dotfiles_key is none) or (dotfiles_key | trim | length == 0))
 
 - name: check groups
-  shell: |
+  ansible.builtin.shell: |
     set -o pipefail
     /usr/bin/getent group | awk -F":" '{print $1}'
   args:
@@ -25,7 +25,7 @@
   changed_when: false
 
 - name: add secondary groups
-  user: name={{ dotfiles_username }} groups={{ item }} append=yes
+  ansible.builtin.user: name={{ dotfiles_username }} groups={{ item }} append=yes
   when: item in dotfiles_etc_groups.stdout_lines
   with_items:
     - mail
@@ -36,20 +36,20 @@
     - docker
 
 - name: ensure keyboard interactive group is present
-  group: name={{ dotfiles_keyboard_interactive_group }} system=true state=present
+  ansible.builtin.group: name={{ dotfiles_keyboard_interactive_group }} system=true state=present
   when: not(
     (dotfiles_keyboard_interactive_group is undefined) or
     (dotfiles_keyboard_interactive_group is none) or
     (dotfiles_keyboard_interactive_group | trim | length == 0))
 
 - name: add keyboard interactive group
-  user: name={{ dotfiles_username }} groups={{ dotfiles_keyboard_interactive_group }} append=yes
+  ansible.builtin.user: name={{ dotfiles_username }} groups={{ dotfiles_keyboard_interactive_group }} append=yes
   when: not((dotfiles_keyboard_interactive_group is undefined) or
     (dotfiles_keyboard_interactive_group is none) or
     (dotfiles_keyboard_interactive_group | trim | length == 0))
 
 - name: Allow {{ dotfiles_username }} to have passwordless sudo
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/sudoers.d/dotfiles
     mode: 0640
     create: true
@@ -58,7 +58,7 @@
     line: '{{ dotfiles_username }} ALL=(ALL) NOPASSWD: ALL'
 
 - name: create directories
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     owner: "{{ dotfiles_username }}"
     group: "{{ dotfiles_username }}"
@@ -69,7 +69,7 @@
     - "/home/{{ dotfiles_username }}/.local/bin"
 
 - name: clone repository
-  git: repo={{ dotfiles_repo }}
+  ansible.builtin.git: repo={{ dotfiles_repo }}
        dest={{ dotfiles_directory }}
        recursive=true
        version={{ dotfiles_version }}
@@ -80,7 +80,7 @@
   become_user: "{{ dotfiles_username }}"
 
 - name: clone vim repository
-  git: repo={{ dotfiles_vim_repo }}
+  ansible.builtin.git: repo={{ dotfiles_vim_repo }}
        dest={{ dotfiles_vim_directory }}
        recursive=true
        umask=027
@@ -89,14 +89,13 @@
   become: true
   become_user: "{{ dotfiles_username }}"
 
-
 - name: check if nvim exists
-  stat:
+  ansible.builtin.stat:
     path: "/home/{{ dotfiles_username }}/.local/bin/nvim"
   register: dotfiles_stat_nvim
 
 - name: download nvim appimage
-  get_url:
+  ansible.builtin.get_url:
     owner: "{{ dotfiles_username }}"
     group: "{{ dotfiles_username }}"
     validate_certs: true
@@ -106,22 +105,22 @@
   when: not dotfiles_stat_nvim.stat.exists | bool and ansible_architecture == "x86_64"
 
 - name: install vim
-  package:
+  ansible.builtin.package:
     name: "vim"
   when: ansible_architecture == "aarch64"
 
 - name: check if ~/.pyenv exists
-  stat:
+  ansible.builtin.stat:
     path: "/home/{{ dotfiles_username }}/.pyenv"
   register: dotfiles_stat_pyenv
 
 - name: check if ~/.gvm exists
-  stat:
+  ansible.builtin.stat:
     path: "/home/{{ dotfiles_username }}/.gvm"
   register: dotfiles_stat_gvm
 
 - name: create temporary directory
-  file:
+  ansible.builtin.file:
     path: "{{ dotfiles_tmp_directory }}"
     owner: "{{ dotfiles_username }}"
     group: "{{ dotfiles_username }}"
@@ -130,7 +129,7 @@
   when: not ((dotfiles_stat_pyenv.stat.exists | bool) and (dotfiles_stat_gvm.stat.exists | bool))
 
 - name: download pyenv installer
-  get_url:
+  ansible.builtin.get_url:
     owner: "{{ dotfiles_username }}"
     group: "{{ dotfiles_username }}"
     validate_certs: true
@@ -140,7 +139,7 @@
   when: not dotfiles_stat_pyenv.stat.exists | bool
 
 - name: install pyenv
-  shell: bash "{{ dotfiles_tmp_directory }}/pyenv-installer"
+  ansible.builtin.shell: bash "{{ dotfiles_tmp_directory }}/pyenv-installer"
   become: true
   become_user: "{{ dotfiles_username }}"
   args:
@@ -150,7 +149,7 @@
   when: not dotfiles_stat_pyenv.stat.exists | bool
 
 - name: download gvm installer
-  get_url:
+  ansible.builtin.get_url:
     owner: "{{ dotfiles_username }}"
     group: "{{ dotfiles_username }}"
     validate_certs: true
@@ -160,7 +159,7 @@
   when: not dotfiles_stat_gvm.stat.exists | bool
 
 - name: install gvm
-  shell: bash "{{ dotfiles_tmp_directory }}/gvm-installer"
+  ansible.builtin.shell: bash "{{ dotfiles_tmp_directory }}/gvm-installer"
   become: true
   become_user: "{{ dotfiles_username }}"
   args:
@@ -170,12 +169,12 @@
   when: not dotfiles_stat_gvm.stat.exists | bool
 
 - name: remove temporary directory
-  file:
+  ansible.builtin.file:
     path: "{{ dotfiles_tmp_directory }}"
     state: absent
 
 - name: clone nodenv repository
-  git: repo={{ dotfiles_nodenv_repo }}
+  ansible.builtin.git: repo={{ dotfiles_nodenv_repo }}
        dest={{ dotfiles_nodenv_directory }}
        recursive=true
        umask=027
@@ -185,7 +184,7 @@
   become_user: "{{ dotfiles_username }}"
 
 - name: clone nodenv build repository
-  git: repo={{ dotfiles_nodenv_build_repo }}
+  ansible.builtin.git: repo={{ dotfiles_nodenv_build_repo }}
        dest={{ dotfiles_nodenv_build_directory }}
        recursive=true
        umask=027
@@ -195,7 +194,7 @@
   become_user: "{{ dotfiles_username }}"
 
 - name: clone rbenv repository
-  git: repo={{ dotfiles_rbenv_repo }}
+  ansible.builtin.git: repo={{ dotfiles_rbenv_repo }}
        dest={{ dotfiles_rbenv_directory }}
        recursive=true
        umask=027
@@ -205,7 +204,7 @@
   when: dotfiles_rbenv_install | bool
 
 - name: clone ruby build repository
-  git: repo={{ dotfiles_rbenv_build_repo }}
+  ansible.builtin.git: repo={{ dotfiles_rbenv_build_repo }}
        dest={{ dotfiles_rbenv_build_directory }}
        recursive=true
        umask=027
@@ -215,7 +214,7 @@
   when: dotfiles_rbenv_install | bool
 
 - name: install dotfiles
-  shell: "./manage install"
+  ansible.builtin.shell: "./manage install"
   become: true
   become_user: "{{ dotfiles_username }}"
   args:
@@ -224,7 +223,7 @@
     creates: "/home/{{ dotfiles_username }}/.zpreztorc"
 
 - name: link .vimrc
-  file:
+  ansible.builtin.file:
     src: "{{ dotfiles_vim_directory }}/vimrc"
     dest: "/home/{{ dotfiles_username }}/.vimrc"
     owner: "{{ dotfiles_username }}"
@@ -234,7 +233,7 @@
   become_user: "{{ dotfiles_username }}"
 
 - name: link .zshrc
-  file:
+  ansible.builtin.file:
     src: "{{ dotfiles_directory }}/zsh/runcoms/zshrc"
     dest: "/home/{{ dotfiles_username }}/.zshrc"
     owner: "{{ dotfiles_username }}"
@@ -245,7 +244,7 @@
   become_user: "{{ dotfiles_username }}"
 
 - name: install vim dotfiles
-  shell: "sudo -i -u {{ dotfiles_username }} bash -c \"cd ~/.vim && ./manage install\""
+  ansible.builtin.shell: "sudo -i -u {{ dotfiles_username }} bash -c \"cd ~/.vim && ./manage install\""
   become: true
   become_user: "{{ dotfiles_username }}"
   args:
@@ -255,7 +254,7 @@
     creates: "{{ dotfiles_vim_directory }}/.ready"
 
 - name: touch .vimrc
-  file:
+  ansible.builtin.file:
     path: "{{ dotfiles_vim_directory }}/vimrc"
     owner: "{{ dotfiles_username }}"
     group: "{{ dotfiles_username }}"
