@@ -8,7 +8,7 @@ dotfiles_tmp_directory: "/home/{{ dotfiles_username }}/.tmp"
 
 dotfiles_repo: https://github.com/l5x/dotfiles.git
 dotfiles_version: "whitelabel"
-dotfiles_directory: "/home/{{ dotfiles_username }}/dotfiles"
+dotfiles_directory: "/home/{{ dotfiles_username }}/.dotfiles"
 
 dotfiles_vim_repo: https://github.com/l5x/vim.git
 dotfiles_vim_directory: "/home/{{ dotfiles_username }}/.vim"
@@ -19,7 +19,7 @@ dotfiles_nodenv_version: v1.4.0
 
 dotfiles_nodenv_build_repo: https://github.com/nodenv/node-build.git
 dotfiles_nodenv_build_directory: "{{ dotfiles_nodenv_directory }}/plugins/node-build"
-dotfiles_nodenv_build_version: v4.9.70
+dotfiles_nodenv_build_version: v4.9.81
 
 dotfiles_rbenv_install: false
 dotfiles_rbenv_repo: https://github.com/rbenv/rbenv.git
@@ -27,7 +27,4 @@ dotfiles_rbenv_directory: "/home/{{ dotfiles_username }}/.rbenv"
 dotfiles_rbenv_build_repo: https://github.com/rbenv/ruby-build.git
 dotfiles_rbenv_build_directory: "/home/{{ dotfiles_username }}/.rbenv/plugins/ruby-build"
 
-dotfiles_gvm_installer: https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer
 dotfiles_pyenv_installer: https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer
-
-dotfiles_nvim_appimage: https://github.com/neovim/neovim/releases/latest/download/nvim.appimage

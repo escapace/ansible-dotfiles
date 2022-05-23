@@ -9,9 +9,11 @@
     packages:
       - bc
       - curl
+      - fish
       - fuse
       - git
       - mosh
+      - neovim
       - rsync
       - sudo
       - tmux
