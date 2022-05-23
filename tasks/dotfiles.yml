@@ -6,7 +6,7 @@
   ansible.builtin.group: name={{ dotfiles_username }} state=present
 
 - name: ensure {{ dotfiles_username }} user is present
-  ansible.builtin.user: name={{ dotfiles_username }} shell=/bin/zsh  group={{ dotfiles_username }}
+  ansible.builtin.user: name={{ dotfiles_username }} shell=/bin/fish  group={{ dotfiles_username }}
 
 - name: set authorized key
   ansible.posix.authorized_key:
@@ -89,21 +89,6 @@
   become: true
   become_user: "{{ dotfiles_username }}"
 
-- name: check if nvim exists
-  ansible.builtin.stat:
-    path: "/home/{{ dotfiles_username }}/.local/bin/nvim"
-  register: dotfiles_stat_nvim
-
-- name: download nvim appimage
-  ansible.builtin.get_url:
-    owner: "{{ dotfiles_username }}"
-    group: "{{ dotfiles_username }}"
-    validate_certs: true
-    url: "{{ dotfiles_nvim_appimage }}"
-    dest: "/home/{{ dotfiles_username }}/.local/bin/nvim"
-    mode: 0750
-  when: not dotfiles_stat_nvim.stat.exists | bool and ansible_architecture == "x86_64"
-
 - name: install vim
   ansible.builtin.package:
     name: "vim"
@@ -114,11 +99,6 @@
     path: "/home/{{ dotfiles_username }}/.pyenv"
   register: dotfiles_stat_pyenv
 
-- name: check if ~/.gvm exists
-  ansible.builtin.stat:
-    path: "/home/{{ dotfiles_username }}/.gvm"
-  register: dotfiles_stat_gvm
-
 - name: create temporary directory
   ansible.builtin.file:
     path: "{{ dotfiles_tmp_directory }}"
@@ -126,7 +106,7 @@
     group: "{{ dotfiles_username }}"
     state: directory
     mode: 0700
-  when: not ((dotfiles_stat_pyenv.stat.exists | bool) and (dotfiles_stat_gvm.stat.exists | bool))
+  when: not dotfiles_stat_pyenv.stat.exists | bool
 
 - name: download pyenv installer
   ansible.builtin.get_url:
@@ -147,26 +127,6 @@
     warn: false
     creates: "/home/{{ dotfiles_username }}/.pyenv"
   when: not dotfiles_stat_pyenv.stat.exists | bool
-
-- name: download gvm installer
-  ansible.builtin.get_url:
-    owner: "{{ dotfiles_username }}"
-    group: "{{ dotfiles_username }}"
-    validate_certs: true
-    url: "{{ dotfiles_gvm_installer }}"
-    dest: "{{ dotfiles_tmp_directory }}/gvm-installer"
-    mode: 0700
-  when: not dotfiles_stat_gvm.stat.exists | bool
-
-- name: install gvm
-  ansible.builtin.shell: bash "{{ dotfiles_tmp_directory }}/gvm-installer"
-  become: true
-  become_user: "{{ dotfiles_username }}"
-  args:
-    chdir: "{{ dotfiles_directory }}"
-    warn: false
-    creates: "/home/{{ dotfiles_username }}/.gvm"
-  when: not dotfiles_stat_gvm.stat.exists | bool
 
 - name: remove temporary directory
   ansible.builtin.file:
@@ -220,35 +180,14 @@
   args:
     chdir: "{{ dotfiles_directory }}"
     warn: false
-    creates: "/home/{{ dotfiles_username }}/.zpreztorc"
-
-- name: link .vimrc
-  ansible.builtin.file:
-    src: "{{ dotfiles_vim_directory }}/vimrc"
-    dest: "/home/{{ dotfiles_username }}/.vimrc"
-    owner: "{{ dotfiles_username }}"
-    group: "{{ dotfiles_username }}"
-    state: link
-  become: true
-  become_user: "{{ dotfiles_username }}"
-
-- name: link .zshrc
-  ansible.builtin.file:
-    src: "{{ dotfiles_directory }}/zsh/runcoms/zshrc"
-    dest: "/home/{{ dotfiles_username }}/.zshrc"
-    owner: "{{ dotfiles_username }}"
-    group: "{{ dotfiles_username }}"
-    state: link
-    force: true
-  become: true
-  become_user: "{{ dotfiles_username }}"
+    creates: "/home/{{ dotfiles_username }}/.config/fish/config.fish"
 
 - name: install vim dotfiles
   ansible.builtin.shell: "sudo -i -u {{ dotfiles_username }} bash -c \"cd ~/.vim && ./manage install\""
   become: true
   become_user: "{{ dotfiles_username }}"
   args:
-    executable: /usr/bin/zsh
+    executable: /usr/bin/bash
     chdir: "{{ dotfiles_vim_directory }}"
     warn: false
     creates: "{{ dotfiles_vim_directory }}/.ready"
