@@ -5,5 +5,5 @@
     msg: "Variable 'dotfiles_username' is not defined or empty"
   when: ((dotfiles_username is undefined) or (dotfiles_username is none) or (dotfiles_username | trim | length == 0))
 
-- include_tasks: dotfiles.yml
+- ansible.builtin.include_tasks: dotfiles.yml
   when: ansible_os_family == "RedHat"

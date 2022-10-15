@@ -1,6 +1,6 @@
 ---
 
-- include_tasks: dependencies.yml
+- ansible.builtin.include_tasks: dependencies.yml
 
 - name: ensure {{ dotfiles_username }} group is present
   ansible.builtin.group: name={{ dotfiles_username }} state=present
