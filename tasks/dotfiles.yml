@@ -42,7 +42,7 @@
     (dotfiles_keyboard_interactive_group is none) or
     (dotfiles_keyboard_interactive_group | trim | length == 0))
 
-- name: add keyboard interactive group
+- name: add to keyboard interactive group
   ansible.builtin.user: name={{ dotfiles_username }} groups={{ dotfiles_keyboard_interactive_group }} append=yes
   when: not((dotfiles_keyboard_interactive_group is undefined) or
     (dotfiles_keyboard_interactive_group is none) or
