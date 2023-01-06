@@ -124,7 +124,6 @@
   become_user: "{{ dotfiles_username }}"
   args:
     chdir: "{{ dotfiles_directory }}"
-    warn: false
     creates: "/home/{{ dotfiles_username }}/.pyenv"
   when: not dotfiles_stat_pyenv.stat.exists | bool
 
@@ -179,7 +178,6 @@
   become_user: "{{ dotfiles_username }}"
   args:
     chdir: "{{ dotfiles_directory }}"
-    warn: false
     creates: "/home/{{ dotfiles_username }}/.config/fish/config.fish"
 
 - name: install vim dotfiles
@@ -189,7 +187,6 @@
   args:
     executable: /usr/bin/bash
     chdir: "{{ dotfiles_vim_directory }}"
-    warn: false
     creates: "{{ dotfiles_vim_directory }}/.ready"
 
 - name: touch .vimrc
