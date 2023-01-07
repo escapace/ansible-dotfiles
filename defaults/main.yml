@@ -6,11 +6,11 @@ dotfiles_keyboard_interactive_group:
 
 dotfiles_tmp_directory: "/home/{{ dotfiles_username }}/.tmp"
 
-dotfiles_repo: https://github.com/l5x/dotfiles.git
+dotfiles_repo: https://github.com/markmartirosian/dotfiles.git
 dotfiles_version: "whitelabel"
 dotfiles_directory: "/home/{{ dotfiles_username }}/.dotfiles"
 
-dotfiles_vim_repo: https://github.com/l5x/vim.git
+dotfiles_vim_repo: https://github.com/markmartirosian/vim.git
 dotfiles_vim_directory: "/home/{{ dotfiles_username }}/.vim"
 
 dotfiles_nodenv_repo: https://github.com/nodenv/nodenv.git
