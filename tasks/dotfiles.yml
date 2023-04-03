@@ -3,10 +3,15 @@
 - ansible.builtin.include_tasks: dependencies.yml
 
 - name: ensure {{ dotfiles_username }} group is present
-  ansible.builtin.group: name={{ dotfiles_username }} state=present
+  ansible.builtin.group:
+    name: "{{ dotfiles_username }}"
+    state: present
 
 - name: ensure {{ dotfiles_username }} user is present
-  ansible.builtin.user: name={{ dotfiles_username }} shell=/bin/fish  group={{ dotfiles_username }}
+  ansible.builtin.user:
+    name: "{{ dotfiles_username }}"
+    shell: /bin/fish
+    group: "{{ dotfiles_username }}"
 
 - name: set authorized key
   ansible.posix.authorized_key:
@@ -25,7 +30,10 @@
   changed_when: false
 
 - name: add secondary groups
-  ansible.builtin.user: name={{ dotfiles_username }} groups={{ item }} append=yes
+  ansible.builtin.user:
+    name: "{{ dotfiles_username }}"
+    groups: "{{ item }}"
+    append: true
   when: item in dotfiles_etc_groups.stdout_lines
   with_items:
     - mail
@@ -36,14 +44,20 @@
     - docker
 
 - name: ensure keyboard interactive group is present
-  ansible.builtin.group: name={{ dotfiles_keyboard_interactive_group }} system=true state=present
+  ansible.builtin.group:
+    name: "{{ dotfiles_keyboard_interactive_group }}"
+    system: true
+    state: present
   when: not(
     (dotfiles_keyboard_interactive_group is undefined) or
     (dotfiles_keyboard_interactive_group is none) or
     (dotfiles_keyboard_interactive_group | trim | length == 0))
 
 - name: add to keyboard interactive group
-  ansible.builtin.user: name={{ dotfiles_username }} groups={{ dotfiles_keyboard_interactive_group }} append=yes
+  ansible.builtin.user:
+    name: "{{ dotfiles_username }}"
+    groups: "{{ dotfiles_keyboard_interactive_group }}"
+    append: true
   when: not((dotfiles_keyboard_interactive_group is undefined) or
     (dotfiles_keyboard_interactive_group is none) or
     (dotfiles_keyboard_interactive_group | trim | length == 0))
@@ -69,23 +83,25 @@
     - "/home/{{ dotfiles_username }}/.local/bin"
 
 - name: clone repository
-  ansible.builtin.git: repo={{ dotfiles_repo }}
-       dest={{ dotfiles_directory }}
-       recursive=true
-       version={{ dotfiles_version }}
-       umask=027
-       update=no
-       depth=1
+  ansible.builtin.git:
+    repo: "{{ dotfiles_repo }}"
+    dest: "{{ dotfiles_directory }}"
+    recursive: true
+    version: "{{ dotfiles_version }}"
+    umask: 027
+    update: false
+    depth: 1
   become: true
   become_user: "{{ dotfiles_username }}"
 
 - name: clone vim repository
-  ansible.builtin.git: repo={{ dotfiles_vim_repo }}
-       dest={{ dotfiles_vim_directory }}
-       recursive=true
-       umask=027
-       update=no
-       depth=1
+  ansible.builtin.git:
+    repo: "{{ dotfiles_vim_repo }}"
+    dest: "{{ dotfiles_vim_directory }}"
+    recursive: true
+    umask: 027
+    update: false
+    depth: 1
   become: true
   become_user: "{{ dotfiles_username }}"
 
@@ -133,41 +149,45 @@
     state: absent
 
 - name: clone nodenv repository
-  ansible.builtin.git: repo={{ dotfiles_nodenv_repo }}
-       dest={{ dotfiles_nodenv_directory }}
-       recursive=true
-       umask=027
-       update=no
-       version={{ dotfiles_nodenv_version }}
+  ansible.builtin.git:
+    repo: "{{ dotfiles_nodenv_repo }}"
+    dest: "{{ dotfiles_nodenv_directory }}"
+    recursive: true
+    umask: 027
+    update: false
+    version: "{{ dotfiles_nodenv_version }}"
   become: true
   become_user: "{{ dotfiles_username }}"
 
 - name: clone nodenv build repository
-  ansible.builtin.git: repo={{ dotfiles_nodenv_build_repo }}
-       dest={{ dotfiles_nodenv_build_directory }}
-       recursive=true
-       umask=027
-       update=no
-       version={{ dotfiles_nodenv_build_version }}
+  ansible.builtin.git:
+    repo: "{{ dotfiles_nodenv_build_repo }}"
+    dest: "{{ dotfiles_nodenv_build_directory }}"
+    recursive: true
+    umask: 027
+    update: false
+    version: "{{ dotfiles_nodenv_build_version }}"
   become: true
   become_user: "{{ dotfiles_username }}"
 
 - name: clone rbenv repository
-  ansible.builtin.git: repo={{ dotfiles_rbenv_repo }}
-       dest={{ dotfiles_rbenv_directory }}
-       recursive=true
-       umask=027
-       update=no
+  ansible.builtin.git:
+    repo: "{{ dotfiles_rbenv_repo }}"
+    dest: "{{ dotfiles_rbenv_directory }}"
+    recursive: true
+    umask: 027
+    update: false
   become: true
   become_user: "{{ dotfiles_username }}"
   when: dotfiles_rbenv_install | bool
 
 - name: clone ruby build repository
-  ansible.builtin.git: repo={{ dotfiles_rbenv_build_repo }}
-       dest={{ dotfiles_rbenv_build_directory }}
-       recursive=true
-       umask=027
-       update=no
+  ansible.builtin.git:
+    repo: "{{ dotfiles_rbenv_build_repo }}"
+    dest: "{{ dotfiles_rbenv_build_directory }}"
+    recursive: true
+    umask: 027
+    update: false
   become: true
   become_user: "{{ dotfiles_username }}"
   when: dotfiles_rbenv_install | bool
