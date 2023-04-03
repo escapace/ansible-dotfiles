@@ -88,7 +88,7 @@
     dest: "{{ dotfiles_directory }}"
     recursive: true
     version: "{{ dotfiles_version }}"
-    umask: 027
+    umask: 0027
     update: false
     depth: 1
   become: true
@@ -99,7 +99,7 @@
     repo: "{{ dotfiles_vim_repo }}"
     dest: "{{ dotfiles_vim_directory }}"
     recursive: true
-    umask: 027
+    umask: 0027
     update: false
     depth: 1
   become: true
@@ -153,7 +153,7 @@
     repo: "{{ dotfiles_nodenv_repo }}"
     dest: "{{ dotfiles_nodenv_directory }}"
     recursive: true
-    umask: 027
+    umask: 0027
     update: false
     version: "{{ dotfiles_nodenv_version }}"
   become: true
@@ -164,7 +164,7 @@
     repo: "{{ dotfiles_nodenv_build_repo }}"
     dest: "{{ dotfiles_nodenv_build_directory }}"
     recursive: true
-    umask: 027
+    umask: 0027
     update: false
     version: "{{ dotfiles_nodenv_build_version }}"
   become: true
@@ -175,7 +175,7 @@
     repo: "{{ dotfiles_rbenv_repo }}"
     dest: "{{ dotfiles_rbenv_directory }}"
     recursive: true
-    umask: 027
+    umask: 0027
     update: false
   become: true
   become_user: "{{ dotfiles_username }}"
@@ -186,7 +186,7 @@
     repo: "{{ dotfiles_rbenv_build_repo }}"
     dest: "{{ dotfiles_rbenv_build_directory }}"
     recursive: true
-    umask: 027
+    umask: 0027
     update: false
   become: true
   become_user: "{{ dotfiles_username }}"
