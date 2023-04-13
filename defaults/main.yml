@@ -15,11 +15,11 @@ dotfiles_vim_directory: "/home/{{ dotfiles_username }}/.vim"
 
 dotfiles_nodenv_repo: https://github.com/nodenv/nodenv.git
 dotfiles_nodenv_directory: "/home/{{ dotfiles_username }}/.nodenv"
-dotfiles_nodenv_version: v1.4.0
+dotfiles_nodenv_version: v1.4.1
 
 dotfiles_nodenv_build_repo: https://github.com/nodenv/node-build.git
 dotfiles_nodenv_build_directory: "{{ dotfiles_nodenv_directory }}/plugins/node-build"
-dotfiles_nodenv_build_version: v4.9.102
+dotfiles_nodenv_build_version: v4.9.111
 
 dotfiles_rbenv_install: false
 dotfiles_rbenv_repo: https://github.com/rbenv/rbenv.git
