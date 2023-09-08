@@ -19,7 +19,7 @@ dotfiles_nodenv_version: v1.4.1
 
 dotfiles_nodenv_build_repo: https://github.com/nodenv/node-build.git
 dotfiles_nodenv_build_directory: "{{ dotfiles_nodenv_directory }}/plugins/node-build"
-dotfiles_nodenv_build_version: v4.9.111
+dotfiles_nodenv_build_version: v4.9.121
 
 dotfiles_rbenv_install: false
 dotfiles_rbenv_repo: https://github.com/rbenv/rbenv.git

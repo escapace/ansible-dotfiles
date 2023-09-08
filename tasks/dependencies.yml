@@ -18,7 +18,7 @@
       - sudo
       - tmux
       - unzip
-      - zsh
+      - ripgrep
 
 - name: install vim requirements
   ansible.builtin.dnf:
