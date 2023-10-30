@@ -114,6 +114,7 @@
   ansible.builtin.stat:
     path: "/home/{{ dotfiles_username }}/.pyenv"
   register: dotfiles_stat_pyenv
+  when: dotfiles_pyenv_install | bool
 
 - name: create temporary directory
   ansible.builtin.file:
@@ -122,7 +123,7 @@
     group: "{{ dotfiles_username }}"
     state: directory
     mode: 0700
-  when: not dotfiles_stat_pyenv.stat.exists | bool
+  when: dotfiles_pyenv_install | bool and not dotfiles_stat_pyenv.stat.exists | bool
 
 - name: download pyenv installer
   ansible.builtin.get_url:
@@ -132,7 +133,7 @@
     url: "{{ dotfiles_pyenv_installer }}"
     dest: "{{ dotfiles_tmp_directory }}/pyenv-installer"
     mode: 0700
-  when: not dotfiles_stat_pyenv.stat.exists | bool
+  when: dotfiles_pyenv_install | bool and not dotfiles_stat_pyenv.stat.exists | bool
 
 - name: install pyenv
   ansible.builtin.shell: bash "{{ dotfiles_tmp_directory }}/pyenv-installer"
@@ -141,7 +142,7 @@
   args:
     chdir: "{{ dotfiles_directory }}"
     creates: "/home/{{ dotfiles_username }}/.pyenv"
-  when: not dotfiles_stat_pyenv.stat.exists | bool
+  when: dotfiles_pyenv_install | bool and not dotfiles_stat_pyenv.stat.exists | bool
 
 - name: remove temporary directory
   ansible.builtin.file:
@@ -158,6 +159,7 @@
     version: "{{ dotfiles_nodenv_version }}"
   become: true
   become_user: "{{ dotfiles_username }}"
+  when: dotfiles_nodenv_install | bool
 
 - name: clone nodenv build repository
   ansible.builtin.git:
@@ -169,28 +171,7 @@
     version: "{{ dotfiles_nodenv_build_version }}"
   become: true
   become_user: "{{ dotfiles_username }}"
-
-- name: clone rbenv repository
-  ansible.builtin.git:
-    repo: "{{ dotfiles_rbenv_repo }}"
-    dest: "{{ dotfiles_rbenv_directory }}"
-    recursive: true
-    umask: "0027"
-    update: false
-  become: true
-  become_user: "{{ dotfiles_username }}"
-  when: dotfiles_rbenv_install | bool
-
-- name: clone ruby build repository
-  ansible.builtin.git:
-    repo: "{{ dotfiles_rbenv_build_repo }}"
-    dest: "{{ dotfiles_rbenv_build_directory }}"
-    recursive: true
-    umask: "0027"
-    update: false
-  become: true
-  become_user: "{{ dotfiles_username }}"
-  when: dotfiles_rbenv_install | bool
+  when: dotfiles_nodenv_install | bool
 
 - name: install dotfiles
   ansible.builtin.shell: "./manage install"
