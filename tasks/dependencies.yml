@@ -19,6 +19,7 @@
       - tmux
       - unzip
       - ripgrep
+      - kitty-terminfo
 
 - name: install vim requirements
   ansible.builtin.dnf:
@@ -48,22 +49,4 @@
       - tk-devel
       - libffi-devel
       - xz-devel
-
-- name: install rbenv requirements
-  ansible.builtin.dnf:
-    name: "{{ packages }}"
-    state: present
-    allowerasing: true
-  when: dotfiles_rbenv_install | bool
-  vars:
-    packages:
-      - gcc
-      - make
-      - bzip2
-      - openssl-devel
-      - libyaml-devel
-      - libffi-devel
-      - readline-devel
-      - zlib-devel
-      - gdbm-devel
-      - ncurses-devel
+  when: dotfiles_pyenv_install | bool
