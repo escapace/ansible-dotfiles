@@ -4,6 +4,8 @@ dotfiles_username:
 dotfiles_key:
 dotfiles_keyboard_interactive_group:
 
+dotfiles_git_depth: 1
+
 dotfiles_tmp_directory: "/home/{{ dotfiles_username }}/.tmp"
 
 dotfiles_repo: https://github.com/markmartirosian/dotfiles.git
@@ -21,7 +23,7 @@ dotfiles_nodenv_version: v1.4.1
 
 dotfiles_nodenv_build_repo: https://github.com/nodenv/node-build.git
 dotfiles_nodenv_build_directory: "{{ dotfiles_nodenv_directory }}/plugins/node-build"
-dotfiles_nodenv_build_version: v4.9.121
+dotfiles_nodenv_build_version: v4.9.137
 
 dotfiles_pyenv_installer: https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer
 dotfiles_pyenv_install: false
