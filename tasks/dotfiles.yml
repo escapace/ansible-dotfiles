@@ -90,7 +90,7 @@
     version: "{{ dotfiles_version }}"
     umask: "0027"
     update: false
-    depth: 1
+    depth: "{{ omit if dotfiles_git_depth == 0 else dotfiles_git_depth }}"
   become: true
   become_user: "{{ dotfiles_username }}"
 
@@ -101,7 +101,7 @@
     recursive: true
     umask: "0027"
     update: false
-    depth: 1
+    depth: "{{ omit if dotfiles_git_depth == 0 else dotfiles_git_depth }}"
   become: true
   become_user: "{{ dotfiles_username }}"
 
