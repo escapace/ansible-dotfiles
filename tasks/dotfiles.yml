@@ -47,7 +47,8 @@
     name: "{{ dotfiles_keyboard_interactive_group }}"
     system: true
     state: present
-  when: not( (dotfiles_keyboard_interactive_group is undefined) or (dotfiles_keyboard_interactive_group is none) or (dotfiles_keyboard_interactive_group | trim |
+  when:
+    not( (dotfiles_keyboard_interactive_group is undefined) or (dotfiles_keyboard_interactive_group is none) or (dotfiles_keyboard_interactive_group | trim |
     length == 0))
 
 - name: add to keyboard interactive group
@@ -55,7 +56,8 @@
     name: "{{ dotfiles_username }}"
     groups: "{{ dotfiles_keyboard_interactive_group }}"
     append: true
-  when: not((dotfiles_keyboard_interactive_group is undefined) or (dotfiles_keyboard_interactive_group is none) or (dotfiles_keyboard_interactive_group | trim | length
+  when:
+    not((dotfiles_keyboard_interactive_group is undefined) or (dotfiles_keyboard_interactive_group is none) or (dotfiles_keyboard_interactive_group | trim | length
     == 0))
 
 - name: Allow {{ dotfiles_username }} to have passwordless sudo
