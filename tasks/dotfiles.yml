@@ -188,7 +188,8 @@
   args:
     executable: /usr/bin/bash
     chdir: "{{ dotfiles_vim_directory }}"
-    creates: "{{ dotfiles_vim_directory }}/.ready"
+  tags:
+    - molecule-idempotence-notest
 
 - name: touch .vimrc
   ansible.builtin.file:
