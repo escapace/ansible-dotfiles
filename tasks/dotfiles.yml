@@ -1,5 +1,4 @@
 ---
-
 - ansible.builtin.include_tasks: dependencies.yml
 
 - name: ensure {{ dotfiles_username }} group is present
@@ -48,28 +47,25 @@
     name: "{{ dotfiles_keyboard_interactive_group }}"
     system: true
     state: present
-  when: not(
-    (dotfiles_keyboard_interactive_group is undefined) or
-    (dotfiles_keyboard_interactive_group is none) or
-    (dotfiles_keyboard_interactive_group | trim | length == 0))
+  when: not( (dotfiles_keyboard_interactive_group is undefined) or (dotfiles_keyboard_interactive_group is none) or (dotfiles_keyboard_interactive_group | trim |
+    length == 0))
 
 - name: add to keyboard interactive group
   ansible.builtin.user:
     name: "{{ dotfiles_username }}"
     groups: "{{ dotfiles_keyboard_interactive_group }}"
     append: true
-  when: not((dotfiles_keyboard_interactive_group is undefined) or
-    (dotfiles_keyboard_interactive_group is none) or
-    (dotfiles_keyboard_interactive_group | trim | length == 0))
+  when: not((dotfiles_keyboard_interactive_group is undefined) or (dotfiles_keyboard_interactive_group is none) or (dotfiles_keyboard_interactive_group | trim | length
+    == 0))
 
 - name: Allow {{ dotfiles_username }} to have passwordless sudo
   ansible.builtin.lineinfile:
     dest: /etc/sudoers.d/dotfiles
-    mode: 0640
+    mode: "0640"
     create: true
     state: present
-    regexp: '^{{ dotfiles_username }}'
-    line: '{{ dotfiles_username }} ALL=(ALL) NOPASSWD: ALL'
+    regexp: ^{{ dotfiles_username }}
+    line: "{{ dotfiles_username }} ALL=(ALL) NOPASSWD: ALL"
 
 - name: create directories
   ansible.builtin.file:
@@ -77,10 +73,10 @@
     owner: "{{ dotfiles_username }}"
     group: "{{ dotfiles_username }}"
     state: directory
-    mode: 0750
+    mode: "0750"
   with_items:
-    - "/home/{{ dotfiles_username }}/.local"
-    - "/home/{{ dotfiles_username }}/.local/bin"
+    - /home/{{ dotfiles_username }}/.local
+    - /home/{{ dotfiles_username }}/.local/bin
 
 - name: clone repository
   ansible.builtin.git:
@@ -107,12 +103,12 @@
 
 - name: install vim
   ansible.builtin.package:
-    name: "vim"
+    name: vim
   when: ansible_architecture == "aarch64"
 
 - name: check if ~/.pyenv exists
   ansible.builtin.stat:
-    path: "/home/{{ dotfiles_username }}/.pyenv"
+    path: /home/{{ dotfiles_username }}/.pyenv
   register: dotfiles_stat_pyenv
   when: dotfiles_pyenv_install | bool
 
@@ -122,7 +118,7 @@
     owner: "{{ dotfiles_username }}"
     group: "{{ dotfiles_username }}"
     state: directory
-    mode: 0700
+    mode: "0700"
   when: dotfiles_pyenv_install | bool and not dotfiles_stat_pyenv.stat.exists | bool
 
 - name: download pyenv installer
@@ -132,7 +128,7 @@
     validate_certs: true
     url: "{{ dotfiles_pyenv_installer }}"
     dest: "{{ dotfiles_tmp_directory }}/pyenv-installer"
-    mode: 0700
+    mode: "0700"
   when: dotfiles_pyenv_install | bool and not dotfiles_stat_pyenv.stat.exists | bool
 
 - name: install pyenv
@@ -141,7 +137,7 @@
   become_user: "{{ dotfiles_username }}"
   args:
     chdir: "{{ dotfiles_directory }}"
-    creates: "/home/{{ dotfiles_username }}/.pyenv"
+    creates: /home/{{ dotfiles_username }}/.pyenv
   when: dotfiles_pyenv_install | bool and not dotfiles_stat_pyenv.stat.exists | bool
 
 - name: remove temporary directory
@@ -174,15 +170,15 @@
   when: dotfiles_nodenv_install | bool
 
 - name: install dotfiles
-  ansible.builtin.shell: "./manage install"
+  ansible.builtin.shell: ./manage install
   become: true
   become_user: "{{ dotfiles_username }}"
   args:
     chdir: "{{ dotfiles_directory }}"
-    creates: "/home/{{ dotfiles_username }}/.config/fish/config.fish"
+    creates: /home/{{ dotfiles_username }}/.config/fish/config.fish
 
 - name: install vim dotfiles
-  ansible.builtin.shell: "sudo -i -u {{ dotfiles_username }} bash -c \"cd ~/.vim && ./manage install\""
+  ansible.builtin.shell: sudo -i -u {{ dotfiles_username }} bash -c "cd ~/.vim && ./manage install"
   become: true
   become_user: "{{ dotfiles_username }}"
   args:
@@ -196,7 +192,7 @@
     path: "{{ dotfiles_vim_directory }}/vimrc"
     owner: "{{ dotfiles_username }}"
     group: "{{ dotfiles_username }}"
-    mode: 0640
+    mode: "0640"
     state: touch
   changed_when: false
   become: true
