@@ -1,5 +1,4 @@
 ---
-
 - name: enable fish repository
   ansible.builtin.command:
     cmd: dnf config-manager --add-repo https://download.opensuse.org/repositories/shells:fish:release:3/CentOS-9_Stream/shells:fish:release:3.repo

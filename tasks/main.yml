@@ -1,8 +1,7 @@
 ---
-
-- name: "check required variables"
+- name: check required variables
   ansible.builtin.fail:
-    msg: "Variable 'dotfiles_username' is not defined or empty"
+    msg: Variable 'dotfiles_username' is not defined or empty
   when: ((dotfiles_username is undefined) or (dotfiles_username is none) or (dotfiles_username | trim | length == 0))
 
 - ansible.builtin.include_tasks: dotfiles.yml
