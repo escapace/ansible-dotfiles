@@ -12,19 +12,21 @@
     allowerasing: true
   vars:
     packages:
+      - bash
       - bc
       - curl
+      - file
       - fish
       - fuse
       - git
+      - kitty-terminfo
       - mosh
       - neovim
+      - ripgrep
       - rsync
       - sudo
       - tmux
       - unzip
-      - ripgrep
-      - kitty-terminfo
 
 - name: install vim requirements
   ansible.builtin.dnf:
@@ -36,7 +38,7 @@
       - gcc
       - gcc-c++
 
-- name: install pyenv requirements
+- name: install python requirements
   ansible.builtin.dnf:
     name: "{{ packages }}"
     state: present
@@ -54,4 +56,4 @@
       - tk-devel
       - libffi-devel
       - xz-devel
-  when: dotfiles_pyenv_install | bool
+  when: dotfiles_rye_install | bool

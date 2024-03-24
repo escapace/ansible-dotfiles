@@ -108,11 +108,17 @@
     name: vim
   when: ansible_architecture == "aarch64"
 
-- name: check if ~/.pyenv exists
+- name: check if ~/.rye exists
   ansible.builtin.stat:
-    path: /home/{{ dotfiles_username }}/.pyenv
-  register: dotfiles_stat_pyenv
-  when: dotfiles_pyenv_install | bool
+    path: /home/{{ dotfiles_username }}/.rye
+  register: dotfiles_stat_rye
+  when: (dotfiles_rye_install | bool) or (dotfiles_rustup_install | bool)
+
+- name: check if ~/.rustup exists
+  ansible.builtin.stat:
+    path: /home/{{ dotfiles_username }}/.rustup
+  register: dotfiles_stat_rustup
+  when: (dotfiles_rustup_install | bool) or (dotfiles_rustup_install | bool)
 
 - name: create temporary directory
   ansible.builtin.file:
@@ -121,26 +127,47 @@
     group: "{{ dotfiles_username }}"
     state: directory
     mode: "0700"
-  when: dotfiles_pyenv_install | bool and not dotfiles_stat_pyenv.stat.exists | bool
+  when: (dotfiles_rye_install | bool and not dotfiles_stat_rye.stat.exists | bool) or (dotfiles_rustup_install | bool and not dotfiles_stat_rustup.stat.exists | bool)
 
-- name: download pyenv installer
+- name: download rye installer
   ansible.builtin.get_url:
     owner: "{{ dotfiles_username }}"
     group: "{{ dotfiles_username }}"
     validate_certs: true
-    url: "{{ dotfiles_pyenv_installer }}"
-    dest: "{{ dotfiles_tmp_directory }}/pyenv-installer"
+    url: "{{ dotfiles_rye_installer }}"
+    dest: "{{ dotfiles_tmp_directory }}/rye-installer"
     mode: "0700"
-  when: dotfiles_pyenv_install | bool and not dotfiles_stat_pyenv.stat.exists | bool
+  when: dotfiles_rye_install | bool and not dotfiles_stat_rye.stat.exists | bool
 
-- name: install pyenv
-  ansible.builtin.shell: bash "{{ dotfiles_tmp_directory }}/pyenv-installer"
+- name: install rye
+  ansible.builtin.shell: bash "{{ dotfiles_tmp_directory }}/rye-installer"
+  become: true
+  become_user: "{{ dotfiles_username }}"
+  environment:
+    RYE_INSTALL_OPTION: "--yes --no-modify-path"
+  args:
+    chdir: "{{ dotfiles_directory }}"
+    creates: /home/{{ dotfiles_username }}/.rye
+  when: dotfiles_rye_install | bool and not dotfiles_stat_rye.stat.exists | bool
+
+- name: download rustup installer
+  ansible.builtin.get_url:
+    owner: "{{ dotfiles_username }}"
+    group: "{{ dotfiles_username }}"
+    validate_certs: true
+    url: "{{ dotfiles_rustup_installer }}"
+    dest: "{{ dotfiles_tmp_directory }}/rustup-installer"
+    mode: "0700"
+  when: dotfiles_rustup_install | bool and not dotfiles_stat_rustup.stat.exists | bool
+
+- name: install rustup
+  ansible.builtin.shell: sh "{{ dotfiles_tmp_directory }}/rustup-installer" "-y" "--no-modify-path"
   become: true
   become_user: "{{ dotfiles_username }}"
   args:
     chdir: "{{ dotfiles_directory }}"
-    creates: /home/{{ dotfiles_username }}/.pyenv
-  when: dotfiles_pyenv_install | bool and not dotfiles_stat_pyenv.stat.exists | bool
+    creates: /home/{{ dotfiles_username }}/.rustup
+  when: dotfiles_rustup_install | bool and not dotfiles_stat_rustup.stat.exists | bool
 
 - name: remove temporary directory
   ansible.builtin.file:
