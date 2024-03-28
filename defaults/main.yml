@@ -24,7 +24,7 @@ dotfiles_nodenv_build_directory: "{{ dotfiles_nodenv_directory }}/plugins/node-b
 dotfiles_nodenv_build_version: v4.9.139
 
 dotfiles_rye_installer: https://rye-up.com/get
-dotfiles_rye_install: true
+dotfiles_rye_install: false
 
 dotfiles_rustup_installer: https://sh.rustup.rs
-dotfiles_rustup_install: true
+dotfiles_rustup_install: false
