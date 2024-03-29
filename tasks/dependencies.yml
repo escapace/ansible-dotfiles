@@ -5,6 +5,12 @@
   tags:
     - molecule-idempotence-notest
 
+- name: enable gh repository
+  ansible.builtin.command:
+    cmd: dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+  tags:
+    - molecule-idempotence-notest
+
 - name: ensure a list of packages installed
   ansible.builtin.dnf:
     name: "{{ packages }}"
@@ -18,6 +24,7 @@
       - file
       - fish
       - fuse
+      - gh
       - git
       - kitty-terminfo
       - mosh
