@@ -108,11 +108,11 @@
     name: vim
   when: ansible_architecture == "aarch64"
 
-- name: check if ~/.rye exists
+- name: check if ~/.uv exists
   ansible.builtin.stat:
-    path: /home/{{ dotfiles_username }}/.rye
-  register: dotfiles_stat_rye
-  when: (dotfiles_rye_install | bool) or (dotfiles_rustup_install | bool)
+    path: /home/{{ dotfiles_username }}/.uv
+  register: dotfiles_stat_uv
+  when: (dotfiles_uv_install | bool) or (dotfiles_rustup_install | bool)
 
 - name: check if ~/.rustup exists
   ansible.builtin.stat:
@@ -127,28 +127,26 @@
     group: "{{ dotfiles_username }}"
     state: directory
     mode: "0700"
-  when: (dotfiles_rye_install | bool and not dotfiles_stat_rye.stat.exists | bool) or (dotfiles_rustup_install | bool and not dotfiles_stat_rustup.stat.exists | bool)
+  when: (dotfiles_uv_install | bool and not dotfiles_stat_uv.stat.exists | bool) or (dotfiles_rustup_install | bool and not dotfiles_stat_rustup.stat.exists | bool)
 
-- name: download rye installer
+- name: download uv installer
   ansible.builtin.get_url:
     owner: "{{ dotfiles_username }}"
     group: "{{ dotfiles_username }}"
     validate_certs: true
-    url: "{{ dotfiles_rye_installer }}"
-    dest: "{{ dotfiles_tmp_directory }}/rye-installer"
+    url: "{{ dotfiles_uv_installer }}"
+    dest: "{{ dotfiles_tmp_directory }}/uv-installer"
     mode: "0700"
-  when: dotfiles_rye_install | bool and not dotfiles_stat_rye.stat.exists | bool
+  when: dotfiles_uv_install | bool and not dotfiles_stat_uv.stat.exists | bool
 
-- name: install rye
-  ansible.builtin.shell: bash "{{ dotfiles_tmp_directory }}/rye-installer"
+- name: install uv
+  ansible.builtin.shell: bash "{{ dotfiles_tmp_directory }}/uv-installer" --no-modify-path --quiet
   become: true
   become_user: "{{ dotfiles_username }}"
-  environment:
-    RYE_INSTALL_OPTION: "--yes --no-modify-path"
   args:
     chdir: "{{ dotfiles_directory }}"
-    creates: /home/{{ dotfiles_username }}/.rye
-  when: dotfiles_rye_install | bool and not dotfiles_stat_rye.stat.exists | bool
+    creates: /home/{{ dotfiles_username }}/.cargo/bin/uv
+  when: dotfiles_uv_install | bool and not dotfiles_stat_uv.stat.exists | bool
 
 - name: download rustup installer
   ansible.builtin.get_url:

@@ -57,4 +57,4 @@
       - tk-devel
       - libffi-devel
       - xz-devel
-  when: dotfiles_rye_install | bool
+  when: dotfiles_uv_install | bool
