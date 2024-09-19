@@ -4,4 +4,4 @@
   vars:
     dotfiles_username: test
   roles:
-    - role: escapace.dotfiles
+    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"

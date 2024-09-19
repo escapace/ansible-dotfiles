@@ -2,6 +2,8 @@
 prerun: false
 dependency:
   name: galaxy
+  options:
+    requirements-file: requirements.yaml
 driver:
   name: docker
 lint: |

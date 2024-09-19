@@ -1,0 +1,11 @@
+ls:
+  .yaml: kebab-case
+  .j2: kebab-case
+  .py: kebab-case
+
+ignore:
+  - .git
+  - .github
+  - .ls-lint.yaml
+  - .venv
+  - node_modules

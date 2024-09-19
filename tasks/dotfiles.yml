@@ -3,20 +3,20 @@
 
 - name: ensure {{ dotfiles_username }} group is present
   ansible.builtin.group:
-    name: "{{ dotfiles_username }}"
+    name: '{{ dotfiles_username }}'
     state: present
 
 - name: ensure {{ dotfiles_username }} user is present
   ansible.builtin.user:
-    name: "{{ dotfiles_username }}"
+    name: '{{ dotfiles_username }}'
     shell: /bin/fish
-    group: "{{ dotfiles_username }}"
+    group: '{{ dotfiles_username }}'
 
 - name: set authorized key
   ansible.posix.authorized_key:
-    user: "{{ dotfiles_username }}"
+    user: '{{ dotfiles_username }}'
     state: present
-    key: "{{ dotfiles_key }}"
+    key: '{{ dotfiles_key }}'
   when: not((dotfiles_key is undefined) or (dotfiles_key is none) or (dotfiles_key | trim | length == 0))
 
 - name: check groups
@@ -30,8 +30,8 @@
 
 - name: add secondary groups
   ansible.builtin.user:
-    name: "{{ dotfiles_username }}"
-    groups: "{{ item }}"
+    name: '{{ dotfiles_username }}'
+    groups: '{{ item }}'
     append: true
   when: item in dotfiles_etc_groups.stdout_lines
   with_items:
@@ -44,7 +44,7 @@
 
 - name: ensure keyboard interactive group is present
   ansible.builtin.group:
-    name: "{{ dotfiles_keyboard_interactive_group }}"
+    name: '{{ dotfiles_keyboard_interactive_group }}'
     system: true
     state: present
   when:
@@ -53,8 +53,8 @@
 
 - name: add to keyboard interactive group
   ansible.builtin.user:
-    name: "{{ dotfiles_username }}"
-    groups: "{{ dotfiles_keyboard_interactive_group }}"
+    name: '{{ dotfiles_username }}'
+    groups: '{{ dotfiles_keyboard_interactive_group }}'
     append: true
   when:
     not((dotfiles_keyboard_interactive_group is undefined) or (dotfiles_keyboard_interactive_group is none) or (dotfiles_keyboard_interactive_group | trim | length
@@ -63,45 +63,45 @@
 - name: Allow {{ dotfiles_username }} to have passwordless sudo
   ansible.builtin.lineinfile:
     dest: /etc/sudoers.d/dotfiles
-    mode: "0640"
+    mode: '0640'
     create: true
     state: present
     regexp: ^{{ dotfiles_username }}
-    line: "{{ dotfiles_username }} ALL=(ALL) NOPASSWD: ALL"
+    line: '{{ dotfiles_username }} ALL=(ALL) NOPASSWD: ALL'
 
 - name: create directories
   ansible.builtin.file:
-    path: "{{ item }}"
-    owner: "{{ dotfiles_username }}"
-    group: "{{ dotfiles_username }}"
+    path: '{{ item }}'
+    owner: '{{ dotfiles_username }}'
+    group: '{{ dotfiles_username }}'
     state: directory
-    mode: "0750"
+    mode: '0750'
   with_items:
     - /home/{{ dotfiles_username }}/.local
     - /home/{{ dotfiles_username }}/.local/bin
 
 - name: clone repository
   ansible.builtin.git:
-    repo: "{{ dotfiles_repo }}"
-    dest: "{{ dotfiles_directory }}"
+    repo: '{{ dotfiles_repo }}'
+    dest: '{{ dotfiles_directory }}'
     recursive: true
-    version: "{{ dotfiles_version }}"
-    umask: "0027"
+    version: '{{ dotfiles_version }}'
+    umask: '0027'
     update: false
-    depth: "{{ omit if dotfiles_git_depth == 0 else dotfiles_git_depth }}"
+    depth: '{{ omit if dotfiles_git_depth == 0 else dotfiles_git_depth }}'
   become: true
-  become_user: "{{ dotfiles_username }}"
+  become_user: '{{ dotfiles_username }}'
 
 - name: clone vim repository
   ansible.builtin.git:
-    repo: "{{ dotfiles_vim_repo }}"
-    dest: "{{ dotfiles_vim_directory }}"
+    repo: '{{ dotfiles_vim_repo }}'
+    dest: '{{ dotfiles_vim_directory }}'
     recursive: true
-    umask: "0027"
+    umask: '0027'
     update: false
-    depth: "{{ omit if dotfiles_git_depth == 0 else dotfiles_git_depth }}"
+    depth: '{{ omit if dotfiles_git_depth == 0 else dotfiles_git_depth }}'
   become: true
-  become_user: "{{ dotfiles_username }}"
+  become_user: '{{ dotfiles_username }}'
 
 - name: install vim
   ansible.builtin.package:
@@ -122,105 +122,105 @@
 
 - name: create temporary directory
   ansible.builtin.file:
-    path: "{{ dotfiles_tmp_directory }}"
-    owner: "{{ dotfiles_username }}"
-    group: "{{ dotfiles_username }}"
+    path: '{{ dotfiles_tmp_directory }}'
+    owner: '{{ dotfiles_username }}'
+    group: '{{ dotfiles_username }}'
     state: directory
-    mode: "0700"
+    mode: '0700'
   when: (dotfiles_uv_install | bool and not dotfiles_stat_uv.stat.exists | bool) or (dotfiles_rustup_install | bool and not dotfiles_stat_rustup.stat.exists | bool)
 
 - name: download uv installer
   ansible.builtin.get_url:
-    owner: "{{ dotfiles_username }}"
-    group: "{{ dotfiles_username }}"
+    owner: '{{ dotfiles_username }}'
+    group: '{{ dotfiles_username }}'
     validate_certs: true
-    url: "{{ dotfiles_uv_installer }}"
-    dest: "{{ dotfiles_tmp_directory }}/uv-installer"
-    mode: "0700"
+    url: '{{ dotfiles_uv_installer }}'
+    dest: '{{ dotfiles_tmp_directory }}/uv-installer'
+    mode: '0700'
   when: dotfiles_uv_install | bool and not dotfiles_stat_uv.stat.exists | bool
 
 - name: install uv
   ansible.builtin.shell: bash "{{ dotfiles_tmp_directory }}/uv-installer" --no-modify-path --quiet
   become: true
-  become_user: "{{ dotfiles_username }}"
+  become_user: '{{ dotfiles_username }}'
   args:
-    chdir: "{{ dotfiles_directory }}"
+    chdir: '{{ dotfiles_directory }}'
     creates: /home/{{ dotfiles_username }}/.cargo/bin/uv
   when: dotfiles_uv_install | bool and not dotfiles_stat_uv.stat.exists | bool
 
 - name: download rustup installer
   ansible.builtin.get_url:
-    owner: "{{ dotfiles_username }}"
-    group: "{{ dotfiles_username }}"
+    owner: '{{ dotfiles_username }}'
+    group: '{{ dotfiles_username }}'
     validate_certs: true
-    url: "{{ dotfiles_rustup_installer }}"
-    dest: "{{ dotfiles_tmp_directory }}/rustup-installer"
-    mode: "0700"
+    url: '{{ dotfiles_rustup_installer }}'
+    dest: '{{ dotfiles_tmp_directory }}/rustup-installer'
+    mode: '0700'
   when: dotfiles_rustup_install | bool and not dotfiles_stat_rustup.stat.exists | bool
 
 - name: install rustup
   ansible.builtin.shell: sh "{{ dotfiles_tmp_directory }}/rustup-installer" "-y" "--no-modify-path"
   become: true
-  become_user: "{{ dotfiles_username }}"
+  become_user: '{{ dotfiles_username }}'
   args:
-    chdir: "{{ dotfiles_directory }}"
+    chdir: '{{ dotfiles_directory }}'
     creates: /home/{{ dotfiles_username }}/.rustup
   when: dotfiles_rustup_install | bool and not dotfiles_stat_rustup.stat.exists | bool
 
 - name: remove temporary directory
   ansible.builtin.file:
-    path: "{{ dotfiles_tmp_directory }}"
+    path: '{{ dotfiles_tmp_directory }}'
     state: absent
 
 - name: clone nodenv repository
   ansible.builtin.git:
-    repo: "{{ dotfiles_nodenv_repo }}"
-    dest: "{{ dotfiles_nodenv_directory }}"
+    repo: '{{ dotfiles_nodenv_repo }}'
+    dest: '{{ dotfiles_nodenv_directory }}'
     recursive: true
-    umask: "0027"
+    umask: '0027'
     update: false
-    version: "{{ dotfiles_nodenv_version }}"
+    version: '{{ dotfiles_nodenv_version }}'
   become: true
-  become_user: "{{ dotfiles_username }}"
+  become_user: '{{ dotfiles_username }}'
   when: dotfiles_nodenv_install | bool
 
 - name: clone nodenv build repository
   ansible.builtin.git:
-    repo: "{{ dotfiles_nodenv_build_repo }}"
-    dest: "{{ dotfiles_nodenv_build_directory }}"
+    repo: '{{ dotfiles_nodenv_build_repo }}'
+    dest: '{{ dotfiles_nodenv_build_directory }}'
     recursive: true
-    umask: "0027"
+    umask: '0027'
     update: false
-    version: "{{ dotfiles_nodenv_build_version }}"
+    version: '{{ dotfiles_nodenv_build_version }}'
   become: true
-  become_user: "{{ dotfiles_username }}"
+  become_user: '{{ dotfiles_username }}'
   when: dotfiles_nodenv_install | bool
 
 - name: install dotfiles
   ansible.builtin.shell: ./manage install
   become: true
-  become_user: "{{ dotfiles_username }}"
+  become_user: '{{ dotfiles_username }}'
   args:
-    chdir: "{{ dotfiles_directory }}"
+    chdir: '{{ dotfiles_directory }}'
     creates: /home/{{ dotfiles_username }}/.config/fish/config.fish
 
 - name: install vim dotfiles
   ansible.builtin.shell: sudo -i -u {{ dotfiles_username }} bash -c "cd ~/.vim && ./manage install"
   become: true
-  become_user: "{{ dotfiles_username }}"
+  become_user: '{{ dotfiles_username }}'
   args:
     executable: /usr/bin/bash
-    chdir: "{{ dotfiles_vim_directory }}"
+    chdir: '{{ dotfiles_vim_directory }}'
   tags:
     - molecule-idempotence-notest
 
 - name: touch .vimrc
   ansible.builtin.file:
-    path: "{{ dotfiles_vim_directory }}/vimrc"
-    owner: "{{ dotfiles_username }}"
-    group: "{{ dotfiles_username }}"
-    mode: "0640"
+    path: '{{ dotfiles_vim_directory }}/vimrc'
+    owner: '{{ dotfiles_username }}'
+    group: '{{ dotfiles_username }}'
+    mode: '0640'
     state: touch
   changed_when: false
   become: true
-  become_user: "{{ dotfiles_username }}"
+  become_user: '{{ dotfiles_username }}'
