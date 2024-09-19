@@ -26,6 +26,12 @@ jobs:
       # configure a constant location for the uv cache
       UV_CACHE_DIR: /tmp/.uv-cache
     steps:
+      - name: docker login
+        uses: docker/login-action@v3
+        with:
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
       - uses: actions/checkout@v4
         with:
           submodules: recursive
