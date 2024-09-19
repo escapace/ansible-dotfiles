@@ -1,7 +1,7 @@
 ---
-- name: Converge
+- name: converge
   hosts: all
-  vars:
-    dotfiles_username: test
   roles:
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+  vars:
+    dotfiles_username: test
