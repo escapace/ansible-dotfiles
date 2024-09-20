@@ -36,7 +36,7 @@ pre-commit:
 
     eslint:
       exclude: '^[\/]*(pnpm-lock\.yaml|lib)$'
-      glob: '*.{js,mjs,cjs,ts,mts,cts,yml,yaml,json}'
+      glob: '*.{js,mjs,cjs,ts,mts,cts,yml,yaml,json,toml}'
       priority: 4
       run: pnpm exec eslint --no-warn-ignored --fix {staged_files}
       stage_fixed: true
