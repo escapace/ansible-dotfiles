@@ -1,7 +1,7 @@
 ls:
-  .yaml: kebab-case
-  .j2: kebab-case
   .py: kebab-case
+  .yaml: kebab-case
+  .yml: kebab-case
 
 ignore:
   - .git
