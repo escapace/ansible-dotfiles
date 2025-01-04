@@ -58,4 +58,5 @@
       - tk-devel
       - libffi-devel
       - xz-devel
+      - libxcrypt-compat
   when: dotfiles_uv_install | bool
