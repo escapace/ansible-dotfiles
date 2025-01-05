@@ -7,7 +7,7 @@
 
 - name: ensure a list of packages installed
   ansible.builtin.dnf:
-    name: '{{ packages }}'
+    name: "{{ packages }}"
     state: present
     allowerasing: true
   vars:
@@ -32,7 +32,7 @@
 
 - name: install vim requirements
   ansible.builtin.dnf:
-    name: '{{ packages }}'
+    name: "{{ packages }}"
     state: present
     allowerasing: true
   vars:
@@ -42,7 +42,7 @@
 
 - name: install python requirements
   ansible.builtin.dnf:
-    name: '{{ packages }}'
+    name: "{{ packages }}"
     state: present
     allowerasing: true
   vars:
