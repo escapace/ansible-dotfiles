@@ -65,6 +65,7 @@
     state: present
     regexp: ^{{ dotfiles_username }}
     line: '{{ dotfiles_username }} ALL=(ALL) NOPASSWD: ALL'
+    validate: visudo -cf %s
 
 - name: create directories
   ansible.builtin.file:
