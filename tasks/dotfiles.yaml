@@ -163,6 +163,8 @@
   args:
     chdir: "{{ dotfiles_directory }}"
     creates: /home/{{ dotfiles_username }}/.rustup
+  environment:
+    TMPDIR: "{{ dotfiles_tmp_directory }}"
   when: dotfiles_rustup_install | bool and not dotfiles_stat_rustup.stat.exists | bool
 
 - name: remove temporary directory
