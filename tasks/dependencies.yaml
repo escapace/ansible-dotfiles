@@ -1,9 +1,12 @@
 ---
 - name: enable gh repository
-  ansible.builtin.command:
-    cmd: dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
-  tags:
-    - molecule-idempotence-notest
+  ansible.builtin.yum_repository:
+    name: gh-cli
+    description: packages for the GitHub CLI
+    baseurl: https://cli.github.com/packages/rpm
+    enabled: true
+    gpgcheck: true
+    gpgkey: https://cli.github.com/packages/githubcli-archive-keyring.asc
 
 - name: ensure a list of packages installed
   ansible.builtin.dnf:
@@ -21,11 +24,13 @@
       - fuse
       - gh
       - git
+      - ghostty-terminfo
       - kitty-terminfo
       - mosh
       - neovim
       - ripgrep
       - rsync
+      - selinux-policy-devel
       - sudo
       - tmux
       - unzip

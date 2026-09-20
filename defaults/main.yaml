@@ -1,35 +1,36 @@
 ---
-dotfiles_username:
+dotfiles_git_depth: 1
 dotfiles_key:
 dotfiles_keyboard_interactive_group:
-dotfiles_git_depth: 1
+dotfiles_online_install: false
+dotfiles_username:
+dotfiles_vim_online_install: false
 
 dotfiles_tmp_directory: /home/{{ dotfiles_username }}/.tmp
 
-dotfiles_repo: https://github.com/yyxi/dotfiles.git
-dotfiles_version: whitelabel
 dotfiles_directory: /home/{{ dotfiles_username }}/.dotfiles
 
-dotfiles_vim_repo: https://github.com/yyxi/vim.git
+dotfiles_repo: https://github.com/yyxi/dotfiles.git
+dotfiles_version: whitelabel
 dotfiles_vim_directory: /home/{{ dotfiles_username }}/.vim
 
 dotfiles_nodenv_install: false
 
-dotfiles_nodenv_repo: https://github.com/nodenv/nodenv.git
 dotfiles_nodenv_directory: /home/{{ dotfiles_username }}/.nodenv
-dotfiles_nodenv_version: v1.5.0
+dotfiles_nodenv_repo: https://github.com/nodenv/nodenv.git
+dotfiles_nodenv_version: v1.6.2
+
+dotfiles_goenv_directory: /home/{{ dotfiles_username }}/.goenv
 
 dotfiles_goenv_install: false
-dotfiles_goenv_repo: https://github.com/go-nv/goenv.git
-dotfiles_goenv_directory: /home/{{ dotfiles_username }}/.goenv
-dotfiles_goenv_version: 2.2.17
-
-dotfiles_nodenv_build_repo: https://github.com/nodenv/node-build.git
+dotfiles_goenv_installer: https://raw.githubusercontent.com/go-nv/goenv/main/install.sh
 dotfiles_nodenv_build_directory: "{{ dotfiles_nodenv_directory }}/plugins/node-build"
-dotfiles_nodenv_build_version: v5.3.22
+dotfiles_nodenv_build_repo: https://github.com/nodenv/node-build.git
+dotfiles_nodenv_build_version: v5.4.53
 
-dotfiles_uv_installer: https://astral.sh/uv/install.sh
 dotfiles_uv_install: false
 
-dotfiles_rustup_installer: https://sh.rustup.rs
 dotfiles_rustup_install: false
+dotfiles_rustup_installer: https://sh.rustup.rs
+dotfiles_uv_installer: https://astral.sh/uv/install.sh
+dotfiles_vim_repo: https://github.com/yyxi/vim.git

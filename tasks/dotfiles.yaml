@@ -33,7 +33,6 @@
     name: "{{ dotfiles_username }}"
     groups: "{{ item }}"
     append: true
-  when: item in dotfiles_etc_groups.stdout_lines
   with_items:
     - admin
     - docker
@@ -43,6 +42,7 @@
     - vboxusers
     - wheel
 
+  when: item in dotfiles_etc_groups.stdout_lines
 - name: ensure keyboard interactive group is present
   ansible.builtin.group:
     name: "{{ dotfiles_keyboard_interactive_group }}"
@@ -106,17 +106,23 @@
     name: vim
   when: ansible_architecture == "aarch64"
 
-- name: check if ~/.uv exists
+- name: check if uv exists
   ansible.builtin.stat:
-    path: /home/{{ dotfiles_username }}/.uv
+    path: /home/{{ dotfiles_username }}/.local/bin/uv
   register: dotfiles_stat_uv
-  when: (dotfiles_uv_install | bool) or (dotfiles_rustup_install | bool)
+  when: dotfiles_uv_install | bool
 
 - name: check if ~/.rustup exists
   ansible.builtin.stat:
     path: /home/{{ dotfiles_username }}/.rustup
   register: dotfiles_stat_rustup
-  when: (dotfiles_rustup_install | bool) or (dotfiles_rustup_install | bool)
+  when: dotfiles_rustup_install | bool
+
+- name: check if ~/.goenv/bin/goenv exists
+  ansible.builtin.stat:
+    path: "{{ dotfiles_goenv_directory }}/bin/goenv"
+  register: dotfiles_stat_goenv
+  when: dotfiles_goenv_install | bool
 
 - name: create temporary directory
   ansible.builtin.file:
@@ -125,7 +131,10 @@
     group: "{{ dotfiles_username }}"
     state: directory
     mode: "0700"
-  when: (dotfiles_uv_install | bool and not dotfiles_stat_uv.stat.exists | bool) or (dotfiles_rustup_install | bool and not dotfiles_stat_rustup.stat.exists | bool)
+  when: >-
+    (dotfiles_uv_install | bool and not dotfiles_stat_uv.stat.exists | bool) or
+    (dotfiles_rustup_install | bool and not dotfiles_stat_rustup.stat.exists | bool) or
+    (dotfiles_goenv_install | bool and not dotfiles_stat_goenv.stat.exists | bool)
 
 - name: download uv installer
   ansible.builtin.get_url:
@@ -139,11 +148,11 @@
 
 - name: install uv
   ansible.builtin.shell: bash "{{ dotfiles_tmp_directory }}/uv-installer" --no-modify-path --quiet
-  become: true
-  become_user: "{{ dotfiles_username }}"
   args:
     chdir: "{{ dotfiles_directory }}"
-    creates: /home/{{ dotfiles_username }}/.cargo/bin/uv
+    creates: /home/{{ dotfiles_username }}/.local/bin/uv
+  become: true
+  become_user: "{{ dotfiles_username }}"
   when: dotfiles_uv_install | bool and not dotfiles_stat_uv.stat.exists | bool
 
 - name: download rustup installer
@@ -158,32 +167,38 @@
 
 - name: install rustup
   ansible.builtin.shell: sh "{{ dotfiles_tmp_directory }}/rustup-installer" "-y" "--no-modify-path"
-  become: true
-  become_user: "{{ dotfiles_username }}"
   args:
     chdir: "{{ dotfiles_directory }}"
     creates: /home/{{ dotfiles_username }}/.rustup
+  become: true
+  become_user: "{{ dotfiles_username }}"
   environment:
     TMPDIR: "{{ dotfiles_tmp_directory }}"
   when: dotfiles_rustup_install | bool and not dotfiles_stat_rustup.stat.exists | bool
+
+- name: download goenv installer
+  ansible.builtin.get_url:
+    owner: "{{ dotfiles_username }}"
+    group: "{{ dotfiles_username }}"
+    validate_certs: true
+    url: "{{ dotfiles_goenv_installer }}"
+    dest: "{{ dotfiles_tmp_directory }}/goenv-installer"
+    mode: "0700"
+  when: dotfiles_goenv_install | bool and not dotfiles_stat_goenv.stat.exists | bool
+
+- name: install goenv
+  ansible.builtin.shell: bash "{{ dotfiles_tmp_directory }}/goenv-installer"
+  args:
+    chdir: "{{ dotfiles_directory }}"
+    creates: "{{ dotfiles_goenv_directory }}/bin/goenv"
+  become: true
+  become_user: "{{ dotfiles_username }}"
+  when: dotfiles_goenv_install | bool and not dotfiles_stat_goenv.stat.exists | bool
 
 - name: remove temporary directory
   ansible.builtin.file:
     path: "{{ dotfiles_tmp_directory }}"
     state: absent
-
-- name: clone goenv repository
-  ansible.builtin.git:
-    repo: "{{ dotfiles_goenv_repo }}"
-    dest: "{{ dotfiles_goenv_directory }}"
-    recursive: true
-    umask: "0027"
-    update: false
-    version: "{{ dotfiles_goenv_version }}"
-    depth: 1
-  become: true
-  become_user: "{{ dotfiles_username }}"
-  when: dotfiles_goenv_install | bool
 
 - name: clone nodenv repository
   ansible.builtin.git:
@@ -210,30 +225,29 @@
   when: dotfiles_nodenv_install | bool
 
 - name: install dotfiles
-  ansible.builtin.shell: ./manage install
-  become: true
-  become_user: "{{ dotfiles_username }}"
+  ansible.builtin.shell: ./manage install {{ dotfiles_online_install | bool | ternary('', '--offline') }}
   args:
     chdir: "{{ dotfiles_directory }}"
-    creates: /home/{{ dotfiles_username }}/.config/fish/config.fish
-
-- name: install vim dotfiles
-  ansible.builtin.shell: sudo -i -u {{ dotfiles_username }} bash -c "cd ~/.vim && ./manage install"
   become: true
   become_user: "{{ dotfiles_username }}"
-  args:
-    executable: /usr/bin/bash
-    chdir: "{{ dotfiles_vim_directory }}"
   tags:
     - molecule-idempotence-notest
 
-- name: touch .vimrc
-  ansible.builtin.file:
-    path: "{{ dotfiles_vim_directory }}/vimrc"
-    owner: "{{ dotfiles_username }}"
-    group: "{{ dotfiles_username }}"
-    mode: "0640"
-    state: touch
-  changed_when: false
+- name: install vim dotfiles
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/fish
+      - --login
+      - --command
+      # TODO: Restore offline vim installation when the vim repository supports it.
+      # - "./manage install {{ dotfiles_vim_online_install | bool | ternary('', '--offline') }}"
+      - ./manage install
+  args:
+    chdir: "{{ dotfiles_vim_directory }}"
   become: true
   become_user: "{{ dotfiles_username }}"
+  environment:
+    HOME: "/home/{{ dotfiles_username }}"
+  when: dotfiles_vim_online_install | bool
+  tags:
+    - molecule-idempotence-notest
