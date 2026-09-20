@@ -5,4 +5,4 @@
   when: ((dotfiles_username is undefined) or (dotfiles_username is none) or (dotfiles_username | trim | length == 0))
 
 - ansible.builtin.include_tasks: dotfiles.yaml
-  when: ansible_os_family == "RedHat"
+  when: ansible_facts["os_family"] == "RedHat"
