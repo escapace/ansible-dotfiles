@@ -61,5 +61,5 @@ pre-commit:
         - pnpm-lock.yaml
       glob: '*.{yaml,yml}'
       priority: 6
-      run: ./.venv/bin/ansible-lint
+      run: uv run ansible-lint
       stage_fixed: true
