@@ -2,7 +2,6 @@
 name = "ansible-dotfiles"
 version = "0.0.0"
 requires-python = ">=3.14,<3.15"
-dependencies = []
 
 [dependency-groups]
 dev = [
@@ -16,6 +15,9 @@ dev = [
   "segno==1.6.6"
 ]
 
+[tool.setuptools]
+py-modules = []
+
 [tool.uv]
 environments = [
   "sys_platform == 'darwin'",
@@ -25,6 +27,3 @@ managed = true
 
 [tool.uv.workspace]
 members = []
-
-[tool.setuptools]
-py-modules = []

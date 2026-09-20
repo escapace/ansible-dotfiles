@@ -104,7 +104,7 @@
 - name: install vim
   ansible.builtin.package:
     name: vim
-  when: ansible_architecture == "aarch64"
+  when: ansible_facts["architecture"] == "aarch64"
 
 - name: check if uv exists
   ansible.builtin.stat:
