@@ -28,3 +28,4 @@ provisioner:
   name: ansible
   playbooks:
     converge: "${CONVERGE_PLAYBOOK:-converge.yaml}"
+    verify: verify.yaml

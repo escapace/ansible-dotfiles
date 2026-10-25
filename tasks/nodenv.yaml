@@ -1,0 +1,88 @@
+---
+- name: install selected nodenv and node-build versions
+  vars:
+    dotfiles_nodenv_components:
+      - name: nodenv
+        repo: "{{ dotfiles_nodenv_repo }}"
+        version: "{{ dotfiles_nodenv_version }}"
+        directory: "{{ dotfiles_nodenv_directory }}"
+        result_var: dotfiles_nodenv_release_response
+      - name: node-build
+        repo: "{{ dotfiles_nodenv_build_repo }}"
+        version: "{{ dotfiles_nodenv_build_version }}"
+        directory: "{{ dotfiles_nodenv_build_directory }}"
+        result_var: dotfiles_nodenv_build_release_response
+  block:
+    - name: validate nodenv checkout inputs
+      ansible.builtin.assert:
+        that:
+          - dotfiles_nodenv_component.repo is string
+          - dotfiles_nodenv_component.repo | length > 0
+          - dotfiles_nodenv_component.version is string
+          - dotfiles_nodenv_component.version | length > 0
+        fail_msg: "{{ dotfiles_nodenv_component.name }} requires a repository and a nonempty Git ref or latest."
+      loop: "{{ dotfiles_nodenv_components }}"
+      loop_control:
+        loop_var: dotfiles_nodenv_component
+        label: "{{ dotfiles_nodenv_component.name }}"
+
+    - name: validate github repositories for latest nodenv releases
+      ansible.builtin.assert:
+        that:
+          - dotfiles_nodenv_component.repo is match('^https://github[.]com/[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9_.-]+[.]git$')
+          - (dotfiles_nodenv_component.repo | regex_replace('[.]git$', '')).split('/')[-1] not in ['.', '..']
+        fail_msg: "latest requires a GitHub HTTPS .git repository for {{ dotfiles_nodenv_component.name }}."
+      loop: "{{ dotfiles_nodenv_components }}"
+      loop_control:
+        loop_var: dotfiles_nodenv_component
+        label: "{{ dotfiles_nodenv_component.name }}"
+      when: dotfiles_nodenv_component.version == 'latest'
+
+    - name: resolve latest nodenv releases
+      ansible.builtin.include_role:
+        name: escapace.utilities.github_request
+        allow_duplicates: true
+        public: false
+      vars:
+        github_request_url: "https://api.github.com/repos/{{ dotfiles_nodenv_component.repo | regex_replace('^https://github[.]com/', '') | regex_replace('[.]git$', '') }}/releases/latest"
+        github_request_result_var: "{{ dotfiles_nodenv_component.result_var }}"
+      loop: "{{ dotfiles_nodenv_components }}"
+      loop_control:
+        loop_var: dotfiles_nodenv_component
+        label: "{{ dotfiles_nodenv_component.name }}"
+      when: dotfiles_nodenv_component.version == 'latest'
+
+    - name: validate latest nodenv release metadata
+      ansible.builtin.assert:
+        that:
+          - dotfiles_nodenv_release is mapping
+          - dotfiles_nodenv_release.get('tag_name') is string
+          - dotfiles_nodenv_release.get('tag_name') | length > 0
+          - dotfiles_nodenv_release.get('draft') is boolean
+          - not dotfiles_nodenv_release.get('draft')
+          - dotfiles_nodenv_release.get('prerelease') is boolean
+          - not dotfiles_nodenv_release.get('prerelease')
+        fail_msg: "no valid latest stable release was returned for {{ dotfiles_nodenv_component.repo }}."
+      vars:
+        dotfiles_nodenv_release: "{{ lookup('ansible.builtin.vars', dotfiles_nodenv_component.result_var).json | default({}) }}"
+      loop: "{{ dotfiles_nodenv_components }}"
+      loop_control:
+        loop_var: dotfiles_nodenv_component
+        label: "{{ dotfiles_nodenv_component.name }}"
+      when: dotfiles_nodenv_component.version == 'latest'
+
+    - name: check out selected nodenv versions
+      ansible.builtin.git:
+        repo: "{{ dotfiles_nodenv_component.repo }}"
+        dest: "{{ dotfiles_nodenv_component.directory }}"
+        version: "{{ dotfiles_nodenv_component.version if dotfiles_nodenv_component.version != 'latest' else lookup('ansible.builtin.vars', dotfiles_nodenv_component.result_var).json.tag_name }}"
+        recursive: true
+        update: true
+        umask: "0027"
+      become: true
+      become_user: "{{ dotfiles_username }}"
+      register: dotfiles_nodenv_checkouts
+      loop: "{{ dotfiles_nodenv_components }}"
+      loop_control:
+        loop_var: dotfiles_nodenv_component
+        label: "{{ dotfiles_nodenv_component.name }}"

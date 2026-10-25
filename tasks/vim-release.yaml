@@ -1,0 +1,68 @@
+---
+- name: validate vim release metadata
+  ansible.builtin.assert:
+    that:
+      - dotfiles_vim_release is mapping
+      - dotfiles_vim_release.get('tag_name') is string
+      - dotfiles_vim_release.get('draft') is boolean
+      - not dotfiles_vim_release.get('draft')
+      - dotfiles_vim_release.get('prerelease') is boolean
+      - dotfiles_vim_requested_tag != 'latest' or not dotfiles_vim_release.get('prerelease')
+      - dotfiles_vim_requested_tag == 'latest' or dotfiles_vim_release.get('tag_name') == dotfiles_vim_requested_tag
+      - dotfiles_vim_release.get('assets') is sequence
+      - dotfiles_vim_release.get('assets') is not string
+      - dotfiles_vim_release.get('assets') is not mapping
+    fail_msg: "missing or invalid vim release metadata for {{ dotfiles_vim_requested_tag }} in {{ dotfiles_vim_github_repository }}."
+
+- name: validate published vim semver
+  block:
+    - name: parse published vim release
+      ansible.builtin.assert:
+        that:
+          - dotfiles_vim_release.tag_name is match('^v')
+          - >-
+            (dotfiles_vim_release.tag_name | regex_replace('^v', ''))
+            is ansible.builtin.version(
+              dotfiles_vim_release.tag_name | regex_replace('^v', ''),
+              'eq', version_type='semver')
+  rescue:
+    - name: reject invalid published vim version
+      ansible.builtin.fail:
+        msg: "vim release {{ dotfiles_vim_release.tag_name }} does not identify a v-prefixed SemVer tag."
+
+- name: validate vim asset records
+  ansible.builtin.assert:
+    that:
+      - item is mapping
+      - item.get('name') is string
+    fail_msg: "invalid asset record for vim {{ dotfiles_vim_release.tag_name }}."
+  loop: "{{ dotfiles_vim_release.assets }}"
+  loop_control:
+    label: "{{ item.name | default('invalid asset') }}"
+  when: not dotfiles_vim_online_install | bool
+
+- name: select vim dependency archive
+  ansible.builtin.set_fact:
+    dotfiles_vim_asset_name: "nvim-offline-{{ dotfiles_vim_release.tag_name }}-linux-{{ {'x86_64': 'amd64', 'aarch64': 'arm64'}.get(ansible_facts['architecture'], 'unsupported') }}-glibc239.tar.gz"
+  when: not dotfiles_vim_online_install | bool
+
+- name: find matching vim dependency archive
+  ansible.builtin.set_fact:
+    dotfiles_vim_assets: "{{ dotfiles_vim_release.assets | selectattr('name', 'equalto', dotfiles_vim_asset_name) | list }}"
+  when: not dotfiles_vim_online_install | bool
+
+- name: require one vim dependency archive
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['architecture'] in ['x86_64', 'aarch64']
+      - dotfiles_vim_assets | length == 1
+    fail_msg: "vim {{ dotfiles_vim_release.tag_name }} must publish exactly one {{ dotfiles_vim_asset_name }}."
+  when: not dotfiles_vim_online_install | bool
+
+- name: validate vim dependency checksum
+  ansible.builtin.assert:
+    that:
+      - dotfiles_vim_assets[0].get('digest') is string
+      - dotfiles_vim_assets[0].get('digest') is match('^sha256:[a-fA-F0-9]{64}$')
+    fail_msg: "vim {{ dotfiles_vim_release.tag_name }} asset {{ dotfiles_vim_asset_name }} has no valid SHA-256 digest."
+  when: not dotfiles_vim_online_install | bool

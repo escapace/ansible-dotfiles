@@ -1,0 +1,21 @@
+---
+- name: initialize version request result
+  ansible.builtin.set_fact:
+    dotfiles_test_rejected: false
+
+- name: check vim version request
+  vars:
+    dotfiles_vim_version: "{{ dotfiles_test_case.version }}"
+  block:
+    - name: validate requested version
+      ansible.builtin.include_tasks: "{{ dotfiles_test_role_directory }}/tasks/vim-request.yaml"
+  rescue:
+    - name: record rejected version request
+      ansible.builtin.set_fact:
+        dotfiles_test_rejected: true
+
+- name: verify version request result
+  ansible.builtin.assert:
+    fail_msg: "unexpected validation result for {{ dotfiles_test_case.version }}."
+    that:
+      - dotfiles_test_rejected == dotfiles_test_case.reject

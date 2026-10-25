@@ -1,0 +1,222 @@
+---
+- name: inspect vim installation state
+  ansible.builtin.stat:
+    path: "{{ dotfiles_vim_directory }}/.ansible-dotfiles-vim.json"
+  register: dotfiles_vim_state_file
+
+- name: initialize vim installation state
+  ansible.builtin.set_fact:
+    dotfiles_vim_state: {}
+
+- name: read vim installation state
+  ansible.builtin.slurp:
+    src: "{{ dotfiles_vim_directory }}/.ansible-dotfiles-vim.json"
+  register: dotfiles_vim_saved_state
+  when: dotfiles_vim_state_file.stat.exists
+
+- name: decode vim installation state
+  ansible.builtin.set_fact:
+    dotfiles_vim_state: "{{ dotfiles_vim_saved_state.content | b64decode | from_json }}"
+  when: dotfiles_vim_state_file.stat.exists
+
+- name: validate saved vim installation state
+  ansible.builtin.assert:
+    that:
+      - dotfiles_vim_state is mapping
+      - dotfiles_vim_state.get('key', {}) is mapping
+      - dotfiles_vim_state.get('release', {}) is mapping
+    fail_msg: "invalid vim installation state in {{ dotfiles_vim_directory }}/.ansible-dotfiles-vim.json."
+
+- name: determine whether vim release discovery is needed
+  ansible.builtin.set_fact:
+    dotfiles_vim_lookup_release: >-
+      {{
+        dotfiles_vim_requested_tag == 'latest' or
+        dotfiles_vim_state.get('key', {}).get('repo') != dotfiles_vim_repo or
+        dotfiles_vim_state.get('release', {}).get('tag_name') != dotfiles_vim_requested_tag
+      }}
+    dotfiles_vim_release: "{{ dotfiles_vim_state.get('release', {}) }}"
+
+- name: discover vim release
+  ansible.builtin.include_role:
+    name: escapace.utilities.github_request
+    allow_duplicates: true
+    public: false
+  vars:
+    github_request_url: "https://api.github.com/repos/{{ dotfiles_vim_github_repository }}/releases/{{ 'latest' if dotfiles_vim_requested_tag == 'latest' else 'tags/' ~ (dotfiles_vim_requested_tag | urlencode) }}"
+    github_request_result_var: dotfiles_vim_release_response
+  when: dotfiles_vim_lookup_release
+
+- name: use discovered vim release
+  ansible.builtin.set_fact:
+    dotfiles_vim_release: "{{ dotfiles_vim_release_response.json | default({}) }}"
+  when: dotfiles_vim_lookup_release
+
+- name: validate selected vim release
+  ansible.builtin.include_tasks: vim-release.yaml
+
+- name: inspect runtime libc for prepared vim dependencies
+  ansible.builtin.command: getconf GNU_LIBC_VERSION
+  register: dotfiles_vim_libc
+  changed_when: false
+  check_mode: false
+  when: not dotfiles_vim_online_install | bool
+
+- name: validate runtime libc version
+  ansible.builtin.assert:
+    that:
+      - dotfiles_vim_libc.stdout is match('^glibc [0-9]+([.][0-9]+)+$')
+      - (dotfiles_vim_libc.stdout.split() | last) is ansible.builtin.version('2.39', 'ge', version_type='loose')
+    fail_msg: "{{ dotfiles_vim_asset_name }} requires glibc 2.39 or newer."
+  when: not dotfiles_vim_online_install | bool
+
+- name: inspect existing neovim configuration
+  ansible.builtin.stat:
+    path: "/home/{{ dotfiles_username }}/.config/nvim"
+  register: dotfiles_vim_config
+
+- name: refuse conflicting neovim configuration
+  ansible.builtin.assert:
+    that:
+      - dotfiles_vim_config.stat.islnk | default(false)
+      - dotfiles_vim_config.stat.lnk_source | default('') == (dotfiles_vim_directory | ansible.builtin.normpath)
+    fail_msg: "move the existing /home/{{ dotfiles_username }}/.config/nvim configuration before installing vim dotfiles."
+  when: dotfiles_vim_config.stat.exists
+
+- name: check out matching vim release
+  ansible.builtin.git:
+    repo: "{{ dotfiles_vim_repo }}"
+    dest: "{{ dotfiles_vim_directory }}"
+    version: "{{ dotfiles_vim_release.tag_name }}"
+    recursive: false
+    umask: "0027"
+    depth: "{{ omit if dotfiles_git_depth == 0 else dotfiles_git_depth }}"
+  become: true
+  become_user: "{{ dotfiles_username }}"
+  register: dotfiles_vim_checkout
+
+- name: identify vim installation inputs
+  ansible.builtin.set_fact:
+    # Exact tag identity matters: SemVer comparisons intentionally ignore build metadata.
+    dotfiles_vim_install_key:
+      repo: "{{ dotfiles_vim_repo }}"
+      tag: "{{ dotfiles_vim_release.tag_name }}"
+      online: "{{ dotfiles_vim_online_install | bool }}"
+      checksum: "{{ '' if dotfiles_vim_online_install | bool else dotfiles_vim_assets[0].digest | lower }}"
+
+- name: inspect prepared vim packages
+  ansible.builtin.stat:
+    path: "{{ dotfiles_vim_directory }}/{{ item }}"
+    follow: true
+  register: dotfiles_vim_components
+  loop:
+    - .venv/bin/python
+    - node_modules/.manage-state.json
+    - vendor/git
+    - vendor/treesitter
+    - vendor/schemas
+
+- name: determine vim installation work
+  ansible.builtin.set_fact:
+    dotfiles_vim_reset_dependencies: >-
+      {{
+        dotfiles_vim_checkout.changed or
+        dotfiles_vim_state.get('key', {}).get('repo') != dotfiles_vim_repo or
+        dotfiles_vim_state.get('key', {}).get('tag') != dotfiles_vim_release.tag_name
+      }}
+    dotfiles_vim_install_needed: >-
+      {{
+        dotfiles_vim_checkout.changed or
+        dotfiles_vim_state.get('key') != dotfiles_vim_install_key or
+        not dotfiles_vim_config.stat.exists or
+        (dotfiles_vim_components.results | selectattr('stat.exists', 'equalto', false) | list | length > 0)
+      }}
+
+- name: prepare user ansible temporary directory
+  ansible.builtin.file:
+    path: "/home/{{ dotfiles_username }}/.ansible/tmp"
+    owner: "{{ dotfiles_username }}"
+    group: "{{ dotfiles_username }}"
+    state: directory
+    mode: "0700"
+  when: dotfiles_vim_install_needed
+
+- name: prepare vim installation
+  become: true
+  become_user: "{{ dotfiles_username }}"
+  environment:
+    HOME: "/home/{{ dotfiles_username }}"
+  when:
+    - dotfiles_vim_install_needed
+    - not ansible_check_mode
+  block:
+    - name: create vim download cache
+      ansible.builtin.file:
+        path: "/home/{{ dotfiles_username }}/.cache/ansible-dotfiles"
+        state: directory
+        mode: "0700"
+      when: not dotfiles_vim_online_install | bool
+
+    - name: download verified vim dependencies
+      ansible.builtin.include_role:
+        name: escapace.utilities.github_download
+        allow_duplicates: true
+        public: false
+      vars:
+        github_download_result_var: dotfiles_vim_download
+        github_download_url: "https://github.com/{{ dotfiles_vim_github_repository }}/releases/download/{{ dotfiles_vim_release.tag_name | urlencode }}/{{ dotfiles_vim_asset_name | urlencode }}"
+        github_download_dest: "/home/{{ dotfiles_username }}/.cache/ansible-dotfiles/{{ dotfiles_vim_asset_name }}"
+        github_download_checksum: "{{ dotfiles_vim_install_key.checksum }}"
+        github_download_owner: "{{ dotfiles_username }}"
+        github_download_group: "{{ dotfiles_username }}"
+        github_download_mode: "0600"
+      when: not dotfiles_vim_online_install | bool
+
+    # These are generated dependency roots, not checked-in vendor/plugins or user data.
+    # Start each release with matching state rather than overlaying stale inventories.
+    - name: remove mismatched generated vim dependencies
+      ansible.builtin.file:
+        path: "{{ dotfiles_vim_directory }}/{{ item }}"
+        state: absent
+      loop:
+        - .venv
+        - node_modules
+        - vendor/git
+        - vendor/python
+        - vendor/treesitter
+        - vendor/schemas
+      when: dotfiles_vim_reset_dependencies
+
+    - name: extract prepared vim dependencies
+      ansible.builtin.unarchive:
+        src: "/home/{{ dotfiles_username }}/.cache/ansible-dotfiles/{{ dotfiles_vim_asset_name }}"
+        dest: "{{ dotfiles_vim_directory }}"
+        remote_src: true
+      when: not dotfiles_vim_online_install | bool
+
+    - name: install vim dotfiles
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/fish
+          - --login
+          - --command
+          - "./manage install{{ dotfiles_vim_online_install | bool | ternary('', ' --offline') }}"
+        chdir: "{{ dotfiles_vim_directory }}"
+      changed_when: true
+
+    - name: record successful vim installation
+      ansible.builtin.copy:
+        content: >-
+          {{
+            {
+              'key': dotfiles_vim_install_key,
+              'release': {
+                'tag_name': dotfiles_vim_release.tag_name,
+                'draft': false,
+                'prerelease': dotfiles_vim_release.prerelease,
+                'assets': dotfiles_vim_release.assets
+              }
+            } | to_nice_json
+          }}
+        dest: "{{ dotfiles_vim_directory }}/.ansible-dotfiles-vim.json"
+        mode: "0600"

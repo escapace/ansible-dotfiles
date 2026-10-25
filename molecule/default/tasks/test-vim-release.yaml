@@ -1,0 +1,36 @@
+---
+- name: initialize release validation result
+  ansible.builtin.set_fact:
+    dotfiles_test_rejected: false
+    dotfiles_vim_requested_tag: "{{ dotfiles_test_case.requested_tag | default('latest') }}"
+
+- name: check vim release
+  vars:
+    ansible_facts:
+      architecture: "{{ dotfiles_test_case.architecture | default('x86_64') }}"
+    dotfiles_test_assets:
+      - digest: "sha256:{{ 'a' * 64 }}"
+        name: "nvim-offline-{{ dotfiles_test_release_tag }}-linux-amd64-glibc239.tar.gz"
+      - digest: "sha256:{{ 'b' * 64 }}"
+        name: "nvim-offline-{{ dotfiles_test_release_tag }}-linux-arm64-glibc239.tar.gz"
+    dotfiles_test_release_tag: "{{ dotfiles_test_case.release_tag | default('v0.1.0') }}"
+    dotfiles_vim_github_repository: yyxi/vim
+    dotfiles_vim_online_install: "{{ dotfiles_test_case.online | default(false) }}"
+    dotfiles_vim_release:
+      assets: "{{ dotfiles_test_case.assets | default(dotfiles_test_assets) }}"
+      draft: "{{ dotfiles_test_case.draft | default(false) }}"
+      prerelease: "{{ dotfiles_test_case.prerelease | default(false) }}"
+      tag_name: "{{ dotfiles_test_release_tag }}"
+  block:
+    - name: validate fixture release
+      ansible.builtin.include_tasks: "{{ dotfiles_test_role_directory }}/tasks/vim-release.yaml"
+  rescue:
+    - name: record rejected release
+      ansible.builtin.set_fact:
+        dotfiles_test_rejected: true
+
+- name: verify release validation result
+  ansible.builtin.assert:
+    fail_msg: "unexpected validation result for {{ dotfiles_test_case.name }}."
+    that:
+      - dotfiles_test_rejected == dotfiles_test_case.reject

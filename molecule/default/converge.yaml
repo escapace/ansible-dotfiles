@@ -3,5 +3,16 @@
   hosts: all
   vars:
     dotfiles_username: test
+    dotfiles_nodenv_install: true
+  pre_tasks:
+    - name: install node runtime for role testing
+      ansible.builtin.dnf:
+        name: nodejs26
+        state: present
+    - name: select node 26 for role testing
+      ansible.builtin.file:
+        src: /usr/bin/node-26
+        dest: /usr/local/bin/node
+        state: link
   roles:
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"

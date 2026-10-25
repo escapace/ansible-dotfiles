@@ -1,0 +1,39 @@
+---
+- name: validate vim inputs
+  ansible.builtin.assert:
+    that:
+      - dotfiles_vim_version is string
+      - dotfiles_vim_repo is string
+      - dotfiles_vim_repo is match('^https://github[.]com/[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9_.-]+[.]git$')
+      - (dotfiles_vim_repo | regex_replace('[.]git$', '')).split('/')[-1] not in ['.', '..']
+      - dotfiles_vim_directory is string
+      - dotfiles_vim_directory is match('^/.+')
+      - (dotfiles_vim_directory | ansible.builtin.normpath) != '/'
+      - "'..' not in dotfiles_vim_directory.split('/')"
+      - dotfiles_git_depth is integer
+      - dotfiles_git_depth >= 0
+    fail_msg: >-
+      vim requires a GitHub HTTPS .git repository, an absolute checkout directory,
+      a nonnegative Git depth, and latest or an exact SemVer release.
+
+- name: normalize requested vim release
+  ansible.builtin.set_fact:
+    dotfiles_vim_requested_tag: "{{ 'latest' if dotfiles_vim_version == 'latest' else 'v' ~ (dotfiles_vim_version | regex_replace('^v', '')) }}"
+    dotfiles_vim_github_repository: "{{ dotfiles_vim_repo | regex_replace('^https://github[.]com/', '') | regex_replace('[.]git$', '') }}"
+
+- name: validate requested vim semver
+  when: dotfiles_vim_requested_tag != 'latest'
+  block:
+    # Comparing a version with itself delegates parsing to Ansible's SemVer implementation.
+    - name: parse requested vim release
+      ansible.builtin.assert:
+        that:
+          - >-
+            (dotfiles_vim_requested_tag | regex_replace('^v', ''))
+            is ansible.builtin.version(
+              dotfiles_vim_requested_tag | regex_replace('^v', ''),
+              'eq', version_type='semver')
+  rescue:
+    - name: reject invalid vim release
+      ansible.builtin.fail:
+        msg: "dotfiles_vim_version must be latest or an exact SemVer release, not {{ dotfiles_vim_version }}."

@@ -1,0 +1,119 @@
+---
+argument_specs:
+  main:
+    short_description: install user dotfiles and a released neovim configuration
+    options:
+      dotfiles_username:
+        description: User to create and configure under /home.
+        type: str
+        required: true
+      dotfiles_key:
+        description: SSH authorized public key; unset, null, or empty leaves keys unchanged.
+        type: str
+      dotfiles_keyboard_interactive_group:
+        description: Optional supplementary group; unset, null, or empty disables it.
+        type: str
+      dotfiles_git_depth:
+        description: Clone depth for dotfiles and vim; zero requests full history.
+        type: int
+        default: 1
+      dotfiles_online_install:
+        description: Allow the dotfiles installer to acquire tools and context-engineering configuration.
+        type: bool
+        default: false
+      dotfiles_vim_online_install:
+        description: Build vim dependencies online instead of using a verified prepared archive.
+        type: bool
+        default: false
+      dotfiles_vim_version:
+        description: Exact SemVer release with an optional v prefix, or latest for the latest stable release.
+        type: str
+        default: latest
+      dotfiles_tmp_directory:
+        description: Temporary installer directory, removed by the role.
+        type: path
+        default: /home/{{ dotfiles_username }}/.tmp
+      dotfiles_directory:
+        description: Dotfiles checkout directory.
+        type: path
+        default: /home/{{ dotfiles_username }}/.dotfiles
+      dotfiles_repo:
+        description: Dotfiles Git repository.
+        type: str
+        default: https://github.com/yyxi/dotfiles.git
+      dotfiles_version:
+        description: Git ref used for the initial dotfiles clone; existing checkouts are not updated.
+        type: str
+        default: whitelabel
+      dotfiles_vim_directory:
+        description: Absolute vim checkout directory; the role owns its generated dependency directories.
+        type: path
+        default: /home/{{ dotfiles_username }}/.vim
+      dotfiles_vim_repo:
+        description: GitHub HTTPS .git repository publishing compatible SemVer releases and dependency archives.
+        type: str
+        default: https://github.com/yyxi/vim.git
+      dotfiles_nodenv_install:
+        description: Install and update nodenv and node-build without installing a Node.js runtime.
+        type: bool
+        default: false
+      dotfiles_nodenv_directory:
+        description: nodenv checkout directory.
+        type: path
+        default: /home/{{ dotfiles_username }}/.nodenv
+      dotfiles_nodenv_repo:
+        description: nodenv Git repository; latest requires a public GitHub HTTPS .git URL.
+        type: str
+        default: https://github.com/nodenv/nodenv.git
+      dotfiles_nodenv_version:
+        description: Git ref or latest for the latest stable GitHub release, resolved on each enabled invocation.
+        type: str
+        default: latest
+      dotfiles_nodenv_build_directory:
+        description: node-build checkout directory.
+        type: path
+        default: "{{ dotfiles_nodenv_directory }}/plugins/node-build"
+      dotfiles_nodenv_build_repo:
+        description: node-build Git repository; latest requires a public GitHub HTTPS .git URL.
+        type: str
+        default: https://github.com/nodenv/node-build.git
+      dotfiles_nodenv_build_version:
+        description: Git ref or latest for the latest stable GitHub release, resolved on each enabled invocation.
+        type: str
+        default: latest
+      dotfiles_goenv_install:
+        description: Install goenv when absent.
+        type: bool
+        default: false
+      dotfiles_goenv_directory:
+        description: goenv installation directory.
+        type: path
+        default: /home/{{ dotfiles_username }}/.goenv
+      dotfiles_goenv_installer:
+        description: goenv installer URL.
+        type: str
+        default: https://raw.githubusercontent.com/go-nv/goenv/main/install.sh
+      dotfiles_pnpm_install:
+        description: Install pnpm when absent, without upgrading existing installations or modifying shell configuration.
+        type: bool
+        default: true
+      dotfiles_pnpm_installer:
+        description: pnpm installer URL; the installer selects its default release.
+        type: str
+        default: https://get.pnpm.io/install.sh
+      dotfiles_uv_install:
+        description: Install uv when absent.
+        type: bool
+        default: false
+      dotfiles_uv_installer:
+        description: uv installer URL.
+        type: str
+        default: https://astral.sh/uv/install.sh
+      dotfiles_rustup_install:
+        description: Install rustup when absent.
+        type: bool
+        default: false
+      dotfiles_rustup_installer:
+        description: rustup installer URL.
+        type: str
+        default: https://sh.rustup.rs

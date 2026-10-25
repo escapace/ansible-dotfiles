@@ -1,0 +1,63 @@
+---
+- name: validate vim release contracts
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  vars:
+    dotfiles_test_role_directory: "{{ playbook_dir | dirname | dirname | dirname }}"
+  vars_files:
+    - ../../../defaults/main.yaml
+  tasks:
+    - name: exercise vim version requests
+      ansible.builtin.include_tasks: ../tasks/test-vim-request.yaml
+      loop:
+        - { reject: false, version: latest }
+        - { reject: false, version: v0.1.0 }
+        - { reject: false, version: 0.1.0 }
+        - { reject: false, version: v1.2.3-rc.1+build.5 }
+        - { reject: true, version: trunk }
+        - { reject: true, version: null }
+      loop_control:
+        loop_var: dotfiles_test_case
+
+    - name: exercise vim release metadata
+      ansible.builtin.include_tasks: ../tasks/test-vim-release.yaml
+      loop:
+        - { name: amd64, reject: false }
+        - { architecture: aarch64, name: arm64, reject: false }
+        - { architecture: riscv64, name: unsupported architecture, reject: true }
+        - { assets: [], name: missing archive, reject: true }
+        - assets:
+            - digest: "sha256:{{ 'a' * 64 }}"
+              name: nvim-offline-v0.1.0-linux-amd64-glibc239.tar.gz
+            - digest: "sha256:{{ 'a' * 64 }}"
+              name: nvim-offline-v0.1.0-linux-amd64-glibc239.tar.gz
+          name: duplicate archives
+          reject: true
+        - assets:
+            - name: nvim-offline-v0.1.0-linux-amd64-glibc239.tar.gz
+          name: missing digest
+          reject: true
+        - assets:
+            - digest: sha256:bad
+              name: nvim-offline-v0.1.0-linux-amd64-glibc239.tar.gz
+          name: invalid digest
+          reject: true
+        - { assets: [null], name: invalid asset record, reject: true }
+        - { assets: {}, name: invalid assets shape, reject: true }
+        - { name: tag mismatch, reject: true, requested_tag: v0.2.0 }
+        - { draft: true, name: draft release, reject: true }
+        - { name: non-semver tag, reject: true, release_tag: vtrunk }
+        - name: latest excludes prereleases
+          prerelease: true
+          reject: true
+          release_tag: v0.2.0-rc.1
+        - name: explicit prerelease
+          prerelease: true
+          reject: false
+          release_tag: v0.2.0-rc.1
+          requested_tag: v0.2.0-rc.1
+        - { assets: [], name: online needs no archive, online: true, reject: false }
+      loop_control:
+        label: "{{ dotfiles_test_case.name }}"
+        loop_var: dotfiles_test_case

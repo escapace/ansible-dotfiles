@@ -28,6 +28,7 @@
       - kitty-terminfo
       - mosh
       - neovim
+      - openssl
       - ripgrep
       - rsync
       - selinux-policy-devel

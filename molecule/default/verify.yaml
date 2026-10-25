@@ -1,0 +1,120 @@
+---
+- ansible.builtin.import_playbook: playbooks/test-vim.yaml
+
+- name: verify vim role state
+  hosts: all
+  gather_facts: true
+  vars:
+    dotfiles_test_role_directory: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}"
+  vars_files:
+    - ../../defaults/main.yaml
+  pre_tasks:
+    - name: select test user after loading role defaults
+      ansible.builtin.set_fact:
+        dotfiles_username: test
+  tasks:
+    - name: inspect installed pnpm
+      ansible.builtin.stat:
+        path: /home/test/.local/share/pnpm/bin/pnpm
+        follow: true
+      register: dotfiles_test_pnpm
+
+    - name: verify pnpm installation ownership and permissions
+      ansible.builtin.assert:
+        that:
+          - dotfiles_pnpm_install
+          - dotfiles_test_pnpm.stat.isreg | default(false)
+          - dotfiles_test_pnpm.stat.executable | default(false)
+          - dotfiles_test_pnpm.stat.pw_name | default('') == 'test'
+
+    - name: verify pnpm installation preserved managed fish configuration
+      ansible.builtin.command:
+        argv:
+          - git
+          - -C
+          - /home/test/.dotfiles
+          - diff
+          - --exit-code
+          - --
+          - fish/config.fish
+      become: true
+      become_user: test
+      changed_when: false
+
+    - name: read installed vim release
+      ansible.builtin.slurp:
+        src: /home/test/.vim/.ansible-dotfiles-vim.json
+      register: dotfiles_test_installed_state
+
+    - name: decode installed vim release
+      ansible.builtin.set_fact:
+        dotfiles_test_installed: "{{ dotfiles_test_installed_state.content | b64decode | from_json }}"
+
+    - name: verify offline defaults and recorded release
+      ansible.builtin.assert:
+        that:
+          - not dotfiles_online_install
+          - not dotfiles_vim_online_install
+          - dotfiles_vim_version == 'latest'
+          - dotfiles_nodenv_version == 'latest'
+          - dotfiles_nodenv_build_version == 'latest'
+          - not dotfiles_test_installed.key.online
+          - dotfiles_test_installed.key.tag == dotfiles_test_installed.release.tag_name
+          - dotfiles_test_installed.key.checksum is match('^sha256:[a-f0-9]{64}$')
+
+    - name: inspect neovim configuration link
+      ansible.builtin.stat:
+        path: /home/test/.config/nvim
+      register: dotfiles_test_config
+
+    - name: verify configuration points to the managed checkout
+      ansible.builtin.assert:
+        that:
+          - dotfiles_test_config.stat.islnk | default(false)
+          - dotfiles_test_config.stat.lnk_source | default('') == '/home/test/.vim'
+
+    - name: inspect selected nodenv tags
+      ansible.builtin.command:
+        argv:
+          - git
+          - -C
+          - "{{ item }}"
+          - describe
+          - --tags
+          - --exact-match
+      become: true
+      become_user: test
+      register: dotfiles_test_nodenv_tags
+      changed_when: false
+      loop:
+        - /home/test/.nodenv
+        - /home/test/.nodenv/plugins/node-build
+
+    - name: reapply pinned nodenv checkouts
+      ansible.builtin.include_tasks: "{{ dotfiles_test_role_directory }}/tasks/nodenv.yaml"
+      vars:
+        dotfiles_nodenv_version: "{{ dotfiles_test_nodenv_tags.results[0].stdout }}"
+        dotfiles_nodenv_build_version: "{{ dotfiles_test_nodenv_tags.results[1].stdout }}"
+
+    - name: verify explicit nodenv refs avoid release discovery
+      ansible.builtin.assert:
+        that:
+          - not dotfiles_nodenv_checkouts.changed
+          - dotfiles_nodenv_release_response is not defined
+          - dotfiles_nodenv_build_release_response is not defined
+
+    - name: select the installed version explicitly
+      ansible.builtin.include_tasks: "{{ dotfiles_test_role_directory }}/tasks/vim-request.yaml"
+      vars:
+        dotfiles_vim_version: "{{ dotfiles_test_installed.release.tag_name }}"
+
+    - name: reapply a pinned vim release
+      ansible.builtin.include_tasks: "{{ dotfiles_test_role_directory }}/tasks/vim.yaml"
+
+    - name: verify pinned release avoids acquisition and installation
+      ansible.builtin.assert:
+        that:
+          - not dotfiles_vim_lookup_release
+          - not dotfiles_vim_install_needed
+          - not dotfiles_vim_checkout.changed
+          - dotfiles_vim_download is not defined

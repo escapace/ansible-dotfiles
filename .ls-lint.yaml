@@ -10,4 +10,6 @@ ignore:
   - .ls-lint.yaml
   - .venv
   - node_modules
+  # Ansible requires this underscore-separated metadata filename.
+  - meta/argument_specs.yaml
   - vendor

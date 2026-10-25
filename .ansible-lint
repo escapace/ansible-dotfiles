@@ -1,4 +1,7 @@
 ---
+# Installed dependencies keep their own lint policy, including utilities' stronger internal namespace.
+exclude_paths:
+  - .ansible/
 
 skip_list:
   - command-instead-of-shell
