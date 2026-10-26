@@ -1,13 +1,4 @@
 ---
-- name: enable gh repository
-  ansible.builtin.yum_repository:
-    name: gh-cli
-    description: packages for the GitHub CLI
-    baseurl: https://cli.github.com/packages/rpm
-    enabled: true
-    gpgcheck: true
-    gpgkey: https://cli.github.com/packages/githubcli-archive-keyring.asc
-
 - name: ensure a list of packages installed
   ansible.builtin.dnf:
     name: "{{ packages }}"
@@ -22,7 +13,6 @@
       - file
       - fish
       - fuse
-      - gh
       - git
       - ghostty-terminfo
       - kitty-terminfo
