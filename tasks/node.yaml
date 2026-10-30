@@ -52,6 +52,11 @@
     - not dotfiles_node_binary.stat.exists
     - not ansible_check_mode
 
+- name: install node runtime requirements
+  ansible.builtin.package:
+    name: libatomic
+    state: present
+
 - name: install node-build compilation requirement
   ansible.builtin.package:
     name: make
