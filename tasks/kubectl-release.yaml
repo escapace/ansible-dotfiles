@@ -1,0 +1,21 @@
+---
+- name: retrieve exact kubectl checksum
+  ansible.builtin.uri:
+    url: "https://dl.k8s.io/release/{{ dotfiles_cli_resolved_version }}/bin/linux/{{ dotfiles_cli_architecture }}/kubectl.sha256"
+    return_content: true
+    use_netrc: false
+    timeout: 30
+    status_code: [200]
+  register: dotfiles_kubectl_checksum_response
+  check_mode: false
+
+- name: validate kubectl checksum
+  ansible.builtin.assert:
+    that:
+      - (dotfiles_kubectl_checksum_response.content | trim) is match('^[a-fA-F0-9]{64}$')
+    fail_msg: "kubectl {{ dotfiles_cli_resolved_version }} linux/{{ dotfiles_cli_architecture }} has no valid SHA-256 checksum."
+
+- name: select exact kubectl artifact
+  ansible.builtin.set_fact:
+    dotfiles_cli_artifact_url: "https://dl.k8s.io/release/{{ dotfiles_cli_resolved_version }}/bin/linux/{{ dotfiles_cli_architecture }}/kubectl"
+    dotfiles_cli_checksum: "{{ dotfiles_kubectl_checksum_response.content | trim | lower }}"

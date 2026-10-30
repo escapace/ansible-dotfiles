@@ -1,0 +1,125 @@
+---
+- name: validate node version request
+  ansible.builtin.include_tasks: node-version.yaml
+
+- name: initialize selected node version
+  ansible.builtin.set_fact:
+    dotfiles_node_resolved_version: "{{ dotfiles_node_version | regex_replace('^v', '') }}"
+
+- name: retrieve node release index for lts selection
+  ansible.builtin.uri:
+    url: https://nodejs.org/dist/index.json
+    use_netrc: false
+    timeout: 30
+    status_code: [200]
+  register: dotfiles_node_release_response
+  check_mode: false
+  when: dotfiles_node_version == 'lts'
+
+- name: resolve node lts version
+  ansible.builtin.include_tasks: node-lts.yaml
+  vars:
+    dotfiles_node_releases: "{{ dotfiles_node_release_response.json | default([]) }}"
+  when: dotfiles_node_version == 'lts'
+
+- name: validate selected node version
+  ansible.builtin.include_tasks: node-version.yaml
+  vars:
+    dotfiles_node_version: "{{ dotfiles_node_resolved_version }}"
+
+- name: inspect selected node executable
+  ansible.builtin.stat:
+    path: "{{ dotfiles_nodenv_directory }}/versions/{{ dotfiles_node_resolved_version }}/bin/node"
+    follow: true
+  register: dotfiles_node_binary
+
+- name: inspect node-build runtime definition
+  ansible.builtin.stat:
+    path: "{{ dotfiles_nodenv_build_directory }}/share/node-build/{{ dotfiles_node_resolved_version }}"
+    follow: true
+  register: dotfiles_node_definition
+  when: not dotfiles_node_binary.stat.exists
+
+- name: require a node-build definition for installation
+  ansible.builtin.assert:
+    that:
+      - dotfiles_node_definition.stat.isreg | default(false)
+    fail_msg: >-
+      node-build {{ dotfiles_nodenv_build_version }} has no definition for Node.js
+      {{ dotfiles_node_resolved_version }}. Update dotfiles_nodenv_build_version
+      or pin dotfiles_node_version to a supported release.
+  when:
+    - not dotfiles_node_binary.stat.exists
+    - not ansible_check_mode
+
+- name: install node-build compilation requirement
+  ansible.builtin.package:
+    name: make
+    state: present
+  when: not dotfiles_node_binary.stat.exists
+
+- name: install selected node runtime through nodenv
+  ansible.builtin.command:
+    argv:
+      - "{{ dotfiles_nodenv_directory }}/bin/nodenv"
+      - install
+      - --skip-existing
+      - "{{ dotfiles_node_resolved_version }}"
+    chdir: "/home/{{ dotfiles_username }}"
+    creates: "{{ dotfiles_nodenv_directory }}/versions/{{ dotfiles_node_resolved_version }}/bin/node"
+  become: true
+  become_user: "{{ dotfiles_username }}"
+  environment:
+    HOME: "/home/{{ dotfiles_username }}"
+    NODENV_ROOT: "{{ dotfiles_nodenv_directory }}"
+    PATH: "{{ dotfiles_nodenv_directory }}/bin:{{ ansible_facts['env']['PATH'] }}"
+    NODE_BUILD_HTTP_CLIENT: curl
+    NODE_BUILD_CURL_OPTS: --connect-timeout 15 --max-time 300
+    NODE_BUILD_SKIP_MIRROR: "1"
+  when: not dotfiles_node_binary.stat.exists
+
+- name: verify installed node runtime
+  ansible.builtin.command:
+    argv:
+      - "{{ dotfiles_nodenv_directory }}/versions/{{ dotfiles_node_resolved_version }}/bin/node"
+      - --version
+  become: true
+  become_user: "{{ dotfiles_username }}"
+  register: dotfiles_node_runtime
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: require the selected node version
+  ansible.builtin.assert:
+    that:
+      - dotfiles_node_runtime.stdout == 'v' ~ dotfiles_node_resolved_version
+    fail_msg: "the installed Node.js runtime does not match {{ dotfiles_node_resolved_version }}."
+  when: not ansible_check_mode
+
+- name: select node as the user's nodenv global default
+  ansible.builtin.copy:
+    content: "{{ dotfiles_node_resolved_version }}\n"
+    dest: "{{ dotfiles_nodenv_directory }}/version"
+    owner: "{{ dotfiles_username }}"
+    group: "{{ dotfiles_username }}"
+    mode: "0640"
+
+- name: inspect nodenv node shim
+  ansible.builtin.stat:
+    path: "{{ dotfiles_nodenv_directory }}/shims/node"
+  register: dotfiles_node_shim
+
+- name: create missing nodenv shims
+  ansible.builtin.command:
+    argv:
+      - "{{ dotfiles_nodenv_directory }}/bin/nodenv"
+      - rehash
+  become: true
+  become_user: "{{ dotfiles_username }}"
+  environment:
+    HOME: "/home/{{ dotfiles_username }}"
+    NODENV_ROOT: "{{ dotfiles_nodenv_directory }}"
+  changed_when: true
+  when:
+    - not dotfiles_node_shim.stat.exists
+    - not ansible_check_mode

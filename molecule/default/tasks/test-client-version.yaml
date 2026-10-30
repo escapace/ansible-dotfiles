@@ -1,0 +1,22 @@
+---
+- name: initialize client version test result
+  ansible.builtin.set_fact:
+    dotfiles_test_rejected: false
+
+- name: validate fixture client version
+  vars:
+    dotfiles_cli:
+      name: kubectl
+    dotfiles_cli_version: "{{ dotfiles_test_case.version }}"
+  block:
+    - name: apply client version validation
+      ansible.builtin.include_tasks: "{{ dotfiles_test_role_directory }}/tasks/cli-version.yaml"
+  rescue:
+    - name: record rejected client version
+      ansible.builtin.set_fact:
+        dotfiles_test_rejected: true
+
+- name: verify client version validation result
+  ansible.builtin.assert:
+    that:
+      - dotfiles_test_rejected == dotfiles_test_case.reject

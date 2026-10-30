@@ -1,0 +1,38 @@
+---
+- name: validate cluster client release contracts
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  vars:
+    dotfiles_test_role_directory: "{{ playbook_dir | dirname | dirname | dirname }}"
+  tasks:
+    - name: exercise cluster client version inputs
+      ansible.builtin.include_tasks: ../tasks/test-client-version.yaml
+      loop:
+        - { version: latest, reject: false }
+        - { version: v1.2.3, reject: false }
+        - { version: 1.2.3-rc.1, reject: false }
+        - { version: main, reject: true }
+        - { version: null, reject: true }
+      loop_control:
+        loop_var: dotfiles_test_case
+
+    - name: exercise virtctl asset selection
+      ansible.builtin.include_tasks: ../tasks/test-virtctl-release.yaml
+      loop:
+        - { name: amd64, architecture: amd64, reject: false }
+        - { name: arm64, architecture: arm64, reject: false }
+        - { name: missing asset, assets: [], reject: true }
+        - name: duplicate asset
+          assets:
+            - { name: virtctl-v1.9.1-linux-amd64, digest: "sha256:{{ 'a' * 64 }}" }
+            - { name: virtctl-v1.9.1-linux-amd64, digest: "sha256:{{ 'a' * 64 }}" }
+          reject: true
+        - name: invalid digest
+          assets:
+            - { name: virtctl-v1.9.1-linux-amd64, digest: sha256:bad }
+          reject: true
+        - { name: mismatched release, release_tag: v1.9.2, reject: true }
+      loop_control:
+        loop_var: dotfiles_test_case
+        label: "{{ dotfiles_test_case.name }}"

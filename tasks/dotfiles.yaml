@@ -257,5 +257,8 @@
     path: "{{ dotfiles_tmp_directory }}"
     state: absent
 
+- name: install optional cluster clients
+  ansible.builtin.include_tasks: cli-tools.yaml
+
 - name: prepare and install vim dotfiles
   ansible.builtin.include_tasks: vim.yaml

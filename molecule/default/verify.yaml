@@ -1,5 +1,7 @@
 ---
 - ansible.builtin.import_playbook: playbooks/test-vim.yaml
+- ansible.builtin.import_playbook: playbooks/test-clients.yaml
+- ansible.builtin.import_playbook: playbooks/test-node.yaml
 
 - name: verify vim role state
   hosts: all
@@ -13,21 +15,42 @@
       ansible.builtin.set_fact:
         dotfiles_username: test
   tasks:
-    - name: inspect installed pnpm
+    - name: verify optional cluster clients remain opt-in
+      ansible.builtin.assert:
+        that:
+          - not dotfiles_kubectl_install
+          - not dotfiles_virtctl_install
+          - dotfiles_kubectl_version == 'latest'
+          - dotfiles_virtctl_version == 'latest'
+
+    - name: verify installed cluster clients and pinned reuse
+      ansible.builtin.include_tasks: tasks/test-client-installed.yaml
+      loop: [kubectl, virtctl]
+      loop_control:
+        loop_var: dotfiles_test_client_name
+
+    - name: leave installed clients unchanged when disabled
+      ansible.builtin.include_tasks: "{{ dotfiles_test_role_directory }}/tasks/cli-tools.yaml"
+
+    - name: verify disabled clients perform no release lookups
+      ansible.builtin.assert:
+        that:
+          - dotfiles_virtctl_release_response is not defined
+          - dotfiles_kubectl_checksum_response is not defined
+
+    - name: inspect optional pnpm installation
       ansible.builtin.stat:
         path: /home/test/.local/share/pnpm/bin/pnpm
         follow: true
       register: dotfiles_test_pnpm
 
-    - name: verify pnpm installation ownership and permissions
+    - name: verify offline role installation does not require pnpm
       ansible.builtin.assert:
         that:
-          - dotfiles_pnpm_install
-          - dotfiles_test_pnpm.stat.isreg | default(false)
-          - dotfiles_test_pnpm.stat.executable | default(false)
-          - dotfiles_test_pnpm.stat.pw_name | default('') == 'test'
+          - not dotfiles_pnpm_install
+          - not dotfiles_test_pnpm.stat.exists
 
-    - name: verify pnpm installation preserved managed fish configuration
+    - name: verify managed fish configuration remains unchanged
       ansible.builtin.command:
         argv:
           - git
@@ -58,6 +81,7 @@
           - dotfiles_vim_version == 'latest'
           - dotfiles_nodenv_version == 'latest'
           - dotfiles_nodenv_build_version == 'latest'
+          - dotfiles_node_version == 'lts'
           - not dotfiles_test_installed.key.online
           - dotfiles_test_installed.key.tag == dotfiles_test_installed.release.tag_name
           - dotfiles_test_installed.key.checksum is match('^sha256:[a-f0-9]{64}$')
@@ -72,6 +96,31 @@
         that:
           - dotfiles_test_config.stat.islnk | default(false)
           - dotfiles_test_config.stat.lnk_source | default('') == '/home/test/.vim'
+
+    - name: read selected nodenv global runtime
+      ansible.builtin.slurp:
+        src: /home/test/.nodenv/version
+      register: dotfiles_test_node_global
+
+    - name: verify fish resolves the nodenv runtime
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/fish
+          - --login
+          - --command
+          - command --search node; and node --version
+        chdir: /home/test
+      become: true
+      become_user: test
+      environment:
+        HOME: /home/test
+      register: dotfiles_test_node_path
+      changed_when: false
+
+    - name: verify runtime selection without a test-only system node
+      ansible.builtin.assert:
+        that:
+          - dotfiles_test_node_path.stdout_lines == ['/home/test/.nodenv/shims/node', 'v' ~ (dotfiles_test_node_global.content | b64decode | trim)]
 
     - name: inspect selected nodenv tags
       ansible.builtin.command:
@@ -95,6 +144,7 @@
       vars:
         dotfiles_nodenv_version: "{{ dotfiles_test_nodenv_tags.results[0].stdout }}"
         dotfiles_nodenv_build_version: "{{ dotfiles_test_nodenv_tags.results[1].stdout }}"
+        dotfiles_node_version: "{{ dotfiles_test_node_global.content | b64decode | trim }}"
 
     - name: verify explicit nodenv refs avoid release discovery
       ansible.builtin.assert:
@@ -102,6 +152,7 @@
           - not dotfiles_nodenv_checkouts.changed
           - dotfiles_nodenv_release_response is not defined
           - dotfiles_nodenv_build_release_response is not defined
+          - dotfiles_node_release_response is skipped
 
     - name: select the installed version explicitly
       ansible.builtin.include_tasks: "{{ dotfiles_test_role_directory }}/tasks/vim-request.yaml"

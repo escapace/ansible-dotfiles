@@ -1,0 +1,65 @@
+---
+- name: retrieve pinned virtctl release metadata
+  ansible.builtin.include_role:
+    name: escapace.utilities.github_request
+    allow_duplicates: true
+    public: false
+  vars:
+    github_request_url: "https://api.github.com/repos/kubevirt/kubevirt/releases/tags/{{ dotfiles_cli_resolved_version | urlencode }}"
+    github_request_result_var: dotfiles_virtctl_release_response
+  when: dotfiles_cli.version != 'latest'
+
+- name: validate selected virtctl release
+  ansible.builtin.assert:
+    that:
+      - dotfiles_virtctl_release is mapping
+      - dotfiles_virtctl_release.get('tag_name') == dotfiles_cli_resolved_version
+      - dotfiles_virtctl_release.get('draft') is boolean
+      - not dotfiles_virtctl_release.get('draft')
+      - dotfiles_virtctl_release.get('prerelease') is boolean
+      - dotfiles_cli.version != 'latest' or not dotfiles_virtctl_release.get('prerelease')
+      - dotfiles_virtctl_release.get('assets') is sequence
+      - dotfiles_virtctl_release.get('assets') is not string
+      - dotfiles_virtctl_release.get('assets') is not mapping
+    fail_msg: "missing or invalid virtctl release metadata for {{ dotfiles_cli_resolved_version }}."
+  vars:
+    dotfiles_virtctl_release: "{{ dotfiles_virtctl_release_response.json | default({}) }}"
+
+- name: validate virtctl asset records
+  ansible.builtin.assert:
+    that:
+      - item is mapping
+      - item.get('name') is string
+    quiet: true
+    fail_msg: "invalid asset record for virtctl {{ dotfiles_cli_resolved_version }}."
+  loop: "{{ dotfiles_virtctl_release_response.json.assets }}"
+  loop_control:
+    label: "{{ item.name | default('invalid asset') }}"
+
+- name: select exact virtctl asset
+  ansible.builtin.set_fact:
+    dotfiles_virtctl_asset_name: "virtctl-{{ dotfiles_cli_resolved_version }}-linux-{{ dotfiles_cli_architecture }}"
+    dotfiles_virtctl_assets: >-
+      {{
+        dotfiles_virtctl_release_response.json.assets
+        | selectattr('name', 'equalto', 'virtctl-' ~ dotfiles_cli_resolved_version ~ '-linux-' ~ dotfiles_cli_architecture)
+        | list
+      }}
+
+- name: require one exact virtctl asset
+  ansible.builtin.assert:
+    that:
+      - dotfiles_virtctl_assets | length == 1
+    fail_msg: "virtctl {{ dotfiles_cli_resolved_version }} must publish exactly one {{ dotfiles_virtctl_asset_name }}."
+
+- name: require a valid virtctl asset digest
+  ansible.builtin.assert:
+    that:
+      - dotfiles_virtctl_assets[0].get('digest') is string
+      - dotfiles_virtctl_assets[0].get('digest') is match('^sha256:[a-fA-F0-9]{64}$')
+    fail_msg: "virtctl {{ dotfiles_cli_resolved_version }} asset {{ dotfiles_virtctl_asset_name }} has no valid SHA-256 digest."
+
+- name: select verified virtctl artifact
+  ansible.builtin.set_fact:
+    dotfiles_cli_artifact_url: "https://github.com/kubevirt/kubevirt/releases/download/{{ dotfiles_cli_resolved_version | urlencode }}/{{ dotfiles_virtctl_asset_name | urlencode }}"
+    dotfiles_cli_checksum: "{{ dotfiles_virtctl_assets[0].digest | regex_replace('^sha256:', '') | lower }}"

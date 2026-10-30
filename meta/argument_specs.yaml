@@ -29,6 +29,22 @@ argument_specs:
         description: Exact SemVer release with an optional v prefix, or latest for the latest stable release.
         type: str
         default: latest
+      dotfiles_kubectl_install:
+        description: Install and update kubectl in the user's .local/bin; false leaves existing installations unchanged.
+        type: bool
+        default: false
+      dotfiles_kubectl_version:
+        description: Exact SemVer release with an optional v prefix, or latest for Kubernetes' latest stable release.
+        type: str
+        default: latest
+      dotfiles_virtctl_install:
+        description: Install and update virtctl in the user's .local/bin; false leaves existing installations unchanged.
+        type: bool
+        default: false
+      dotfiles_virtctl_version:
+        description: Exact SemVer release with an optional v prefix, or latest for KubeVirt's latest stable GitHub release.
+        type: str
+        default: latest
       dotfiles_tmp_directory:
         description: Temporary installer directory, removed by the role.
         type: path
@@ -54,9 +70,13 @@ argument_specs:
         type: str
         default: https://github.com/yyxi/vim.git
       dotfiles_nodenv_install:
-        description: Install and update nodenv and node-build without installing a Node.js runtime.
+        description: Install and update nodenv and node-build, install the selected Node.js runtime, and select it as the user's global default.
         type: bool
         default: false
+      dotfiles_node_version:
+        description: lts for the newest LTS release in Node.js's release index, or an exact stable version with an optional v prefix; used when nodenv installation is enabled.
+        type: str
+        default: lts
       dotfiles_nodenv_directory:
         description: nodenv checkout directory.
         type: path
@@ -96,7 +116,7 @@ argument_specs:
       dotfiles_pnpm_install:
         description: Install pnpm when absent, without upgrading existing installations or modifying shell configuration.
         type: bool
-        default: true
+        default: false
       dotfiles_pnpm_installer:
         description: pnpm installer URL; the installer selects its default release.
         type: str

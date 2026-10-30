@@ -1,0 +1,48 @@
+---
+- name: validate node runtime selection
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  vars:
+    dotfiles_test_role_directory: "{{ playbook_dir | dirname | dirname | dirname }}"
+  tasks:
+    - name: exercise node runtime inputs
+      ansible.builtin.include_tasks: ../tasks/test-node-version.yaml
+      loop:
+        - { version: lts, reject: false }
+        - { version: 24.22.1, reject: false }
+        - { version: v24.22.1, reject: false }
+        - { version: latest, reject: true }
+        - { version: 24, reject: true }
+        - { version: v24.1.0-rc.1, reject: true }
+        - { version: null, reject: true }
+      loop_control:
+        loop_var: dotfiles_test_case
+
+    - name: exercise node lts metadata
+      ansible.builtin.include_tasks: ../tasks/test-node-lts.yaml
+      loop:
+        - name: unsorted releases exclude current and empty lts markers
+          releases:
+            - { version: v22.21.0, lts: Jod }
+            - { version: v26.12.1, lts: false }
+            - { version: v24.9.0, lts: Krypton }
+            - { version: v24.22.1, lts: Krypton }
+            - { version: v28.0.0, lts: "" }
+          expected: 24.22.1
+          reject: false
+        - name: no lts releases
+          releases:
+            - { version: v26.12.1, lts: false }
+          reject: true
+        - { name: empty release index, releases: [], reject: true }
+        - { name: invalid release index, releases: {}, reject: true }
+        - { name: missing lts field, releases: [{ version: v24.22.1 }], reject: true }
+        - {
+            name: invalid lts version,
+            releases: [{ version: arbitrary, lts: Krypton }],
+            reject: true,
+          }
+      loop_control:
+        loop_var: dotfiles_test_case
+        label: "{{ dotfiles_test_case.name }}"

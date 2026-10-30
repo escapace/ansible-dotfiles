@@ -1,0 +1,20 @@
+---
+- name: initialize node version test result
+  ansible.builtin.set_fact:
+    dotfiles_test_rejected: false
+
+- name: validate fixture node version
+  vars:
+    dotfiles_node_version: "{{ dotfiles_test_case.version }}"
+  block:
+    - name: apply node version validation
+      ansible.builtin.include_tasks: "{{ dotfiles_test_role_directory }}/tasks/node-version.yaml"
+  rescue:
+    - name: record rejected node version
+      ansible.builtin.set_fact:
+        dotfiles_test_rejected: true
+
+- name: verify node version validation result
+  ansible.builtin.assert:
+    that:
+      - dotfiles_test_rejected == dotfiles_test_case.reject

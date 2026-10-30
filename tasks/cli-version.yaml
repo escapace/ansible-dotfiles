@@ -1,0 +1,24 @@
+---
+- name: validate cluster client version type
+  ansible.builtin.assert:
+    that:
+      - dotfiles_cli_version is string
+      - dotfiles_cli_version | length > 0
+    fail_msg: "{{ dotfiles_cli.name }} requires latest or an exact SemVer version."
+
+- name: validate cluster client semver
+  when: dotfiles_cli_version != 'latest'
+  block:
+    - name: parse cluster client release
+      ansible.builtin.assert:
+        that:
+          - (dotfiles_cli_version | regex_replace('^v', '')) is match('^[0-9A-Za-z.+-]+$')
+          - >-
+            (dotfiles_cli_version | regex_replace('^v', ''))
+            is ansible.builtin.version(
+              dotfiles_cli_version | regex_replace('^v', ''),
+              'eq', version_type='semver')
+  rescue:
+    - name: reject invalid cluster client release
+      ansible.builtin.fail:
+        msg: "{{ dotfiles_cli.name }} version {{ dotfiles_cli_version }} is not an exact SemVer release."

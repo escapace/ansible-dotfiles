@@ -86,3 +86,6 @@
       loop_control:
         loop_var: dotfiles_nodenv_component
         label: "{{ dotfiles_nodenv_component.name }}"
+
+- name: install and select the node runtime
+  ansible.builtin.include_tasks: node.yaml

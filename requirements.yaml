@@ -1,6 +1,7 @@
 ---
 collections:
   - name: ansible.posix
+  - name: community.general
   - name: https://github.com/escapace/ansible-utilities.git
     type: git
     version: origin/trunk

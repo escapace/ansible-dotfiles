@@ -1,0 +1,176 @@
+---
+- name: validate requested cluster client version
+  ansible.builtin.include_tasks: cli-version.yaml
+  vars:
+    dotfiles_cli_version: "{{ dotfiles_cli.version }}"
+
+- name: require a supported cluster client platform
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['system'] == 'Linux'
+      - ansible_facts['architecture'] in ['x86_64', 'aarch64']
+    fail_msg: "{{ dotfiles_cli.name }} installation supports Linux x86_64 and aarch64."
+
+- name: initialize cluster client selection
+  ansible.builtin.set_fact:
+    dotfiles_cli_architecture: "{{ {'x86_64': 'amd64', 'aarch64': 'arm64'}[ansible_facts['architecture']] }}"
+    dotfiles_cli_resolved_version: "{{ 'latest' if dotfiles_cli.version == 'latest' else 'v' ~ (dotfiles_cli.version | regex_replace('^v', '')) }}"
+    dotfiles_cli_state: {}
+
+- name: resolve latest stable kubectl version
+  ansible.builtin.uri:
+    url: https://dl.k8s.io/release/stable.txt
+    return_content: true
+    use_netrc: false
+    timeout: 30
+    status_code: [200]
+  register: dotfiles_kubectl_latest_response
+  check_mode: false
+  when:
+    - dotfiles_cli.name == 'kubectl'
+    - dotfiles_cli.version == 'latest'
+
+- name: select latest stable kubectl version
+  ansible.builtin.set_fact:
+    dotfiles_cli_resolved_version: "{{ dotfiles_kubectl_latest_response.content | trim }}"
+  when:
+    - dotfiles_cli.name == 'kubectl'
+    - dotfiles_cli.version == 'latest'
+
+- name: resolve latest stable virtctl release
+  ansible.builtin.include_role:
+    name: escapace.utilities.github_request
+    allow_duplicates: true
+    public: false
+  vars:
+    github_request_url: https://api.github.com/repos/kubevirt/kubevirt/releases/latest
+    github_request_result_var: dotfiles_virtctl_release_response
+  when:
+    - dotfiles_cli.name == 'virtctl'
+    - dotfiles_cli.version == 'latest'
+
+- name: select latest stable virtctl version
+  ansible.builtin.set_fact:
+    dotfiles_cli_resolved_version: "{{ dotfiles_virtctl_release_response.json.tag_name | default('') }}"
+  when:
+    - dotfiles_cli.name == 'virtctl'
+    - dotfiles_cli.version == 'latest'
+
+- name: validate resolved cluster client version
+  ansible.builtin.include_tasks: cli-version.yaml
+  vars:
+    dotfiles_cli_version: "{{ dotfiles_cli_resolved_version }}"
+
+- name: require a concrete upstream release tag
+  ansible.builtin.assert:
+    that:
+      - dotfiles_cli_resolved_version is match('^v[0-9]')
+    fail_msg: "{{ dotfiles_cli.name }} did not resolve to a v-prefixed release."
+
+- name: inspect cluster client binary
+  ansible.builtin.stat:
+    path: "/home/{{ dotfiles_username }}/.local/bin/{{ dotfiles_cli.name }}"
+    follow: false
+    checksum_algorithm: sha256
+  register: dotfiles_cli_binary
+
+- name: refuse non-regular cluster client destinations
+  ansible.builtin.assert:
+    that:
+      - not dotfiles_cli_binary.stat.exists or dotfiles_cli_binary.stat.isreg | default(false)
+    fail_msg: "move the non-regular /home/{{ dotfiles_username }}/.local/bin/{{ dotfiles_cli.name }} before installation."
+
+- name: inspect recorded cluster client state
+  ansible.builtin.stat:
+    path: "/home/{{ dotfiles_username }}/.cache/ansible-dotfiles/{{ dotfiles_cli.name }}.json"
+  register: dotfiles_cli_state_file
+
+- name: read recorded cluster client state
+  ansible.builtin.slurp:
+    src: "/home/{{ dotfiles_username }}/.cache/ansible-dotfiles/{{ dotfiles_cli.name }}.json"
+  register: dotfiles_cli_saved_state
+  when: dotfiles_cli_state_file.stat.exists
+
+- name: decode recorded cluster client state
+  ansible.builtin.set_fact:
+    dotfiles_cli_state: "{{ dotfiles_cli_saved_state.content | b64decode | from_json }}"
+  when: dotfiles_cli_state_file.stat.exists
+
+- name: validate recorded cluster client state
+  ansible.builtin.assert:
+    that:
+      - dotfiles_cli_state is mapping
+    fail_msg: "invalid recorded {{ dotfiles_cli.name }} installation state."
+
+- name: determine cluster client installation work
+  ansible.builtin.set_fact:
+    dotfiles_cli_install_needed: >-
+      {{
+        dotfiles_cli_state.get('version') != dotfiles_cli_resolved_version or
+        dotfiles_cli_state.get('architecture') != dotfiles_cli_architecture or
+        dotfiles_cli_state.get('checksum', '') != dotfiles_cli_binary.stat.get('checksum', 'missing')
+      }}
+
+- name: resolve exact cluster client artifact and checksum
+  ansible.builtin.include_tasks: "{{ dotfiles_cli.name }}-release.yaml"
+  when: dotfiles_cli_install_needed
+
+- name: install verified cluster client
+  when:
+    - dotfiles_cli_install_needed
+    - not ansible_check_mode
+  block:
+    - name: create cluster client directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        owner: "{{ dotfiles_username }}"
+        group: "{{ dotfiles_username }}"
+        state: directory
+        mode: "0750"
+      loop:
+        - "/home/{{ dotfiles_username }}/.local/bin"
+        - "/home/{{ dotfiles_username }}/.cache/ansible-dotfiles"
+
+    - name: download verified kubectl binary
+      ansible.builtin.get_url:
+        url: "{{ dotfiles_cli_artifact_url }}"
+        dest: "/home/{{ dotfiles_username }}/.local/bin/kubectl"
+        checksum: "sha256:{{ dotfiles_cli_checksum }}"
+        owner: "{{ dotfiles_username }}"
+        group: "{{ dotfiles_username }}"
+        mode: "0755"
+        use_netrc: false
+        timeout: 60
+      register: dotfiles_kubectl_download
+      when: dotfiles_cli.name == 'kubectl'
+
+    - name: download verified virtctl binary
+      ansible.builtin.include_role:
+        name: escapace.utilities.github_download
+        allow_duplicates: true
+        public: false
+      vars:
+        github_download_result_var: dotfiles_virtctl_download
+        github_download_url: "{{ dotfiles_cli_artifact_url }}"
+        github_download_dest: "/home/{{ dotfiles_username }}/.local/bin/virtctl"
+        github_download_checksum: "sha256:{{ dotfiles_cli_checksum }}"
+        github_download_owner: "{{ dotfiles_username }}"
+        github_download_group: "{{ dotfiles_username }}"
+        github_download_mode: "0755"
+      when: dotfiles_cli.name == 'virtctl'
+
+    - name: record verified cluster client installation
+      ansible.builtin.copy:
+        content: "{{ {'version': dotfiles_cli_resolved_version, 'architecture': dotfiles_cli_architecture, 'checksum': dotfiles_cli_checksum} | to_nice_json }}"
+        dest: "/home/{{ dotfiles_username }}/.cache/ansible-dotfiles/{{ dotfiles_cli.name }}.json"
+        owner: "{{ dotfiles_username }}"
+        group: "{{ dotfiles_username }}"
+        mode: "0600"
+
+- name: maintain cluster client binary ownership and permissions
+  ansible.builtin.file:
+    path: "/home/{{ dotfiles_username }}/.local/bin/{{ dotfiles_cli.name }}"
+    owner: "{{ dotfiles_username }}"
+    group: "{{ dotfiles_username }}"
+    mode: "0755"
+  when: dotfiles_cli_binary.stat.exists or not ansible_check_mode

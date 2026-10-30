@@ -1,0 +1,34 @@
+---
+- name: validate node release index
+  ansible.builtin.assert:
+    that:
+      - dotfiles_node_releases is sequence
+      - dotfiles_node_releases is not string
+      - dotfiles_node_releases is not mapping
+      - dotfiles_node_releases | select('mapping') | list | length == dotfiles_node_releases | length
+      - dotfiles_node_releases | selectattr('lts', 'defined') | list | length == dotfiles_node_releases | length
+      - dotfiles_node_releases | selectattr('version', 'defined') | list | length == dotfiles_node_releases | length
+    fail_msg: Node.js release index must contain release records with version and lts fields.
+
+- name: collect node lts candidates
+  ansible.builtin.set_fact:
+    dotfiles_node_lts_versions: >-
+      {{
+        dotfiles_node_releases
+        | selectattr('lts', 'string')
+        | rejectattr('lts', 'equalto', '')
+        | map(attribute='version')
+        | list
+      }}
+
+- name: require stable node lts versions
+  ansible.builtin.assert:
+    that:
+      - dotfiles_node_lts_versions | length > 0
+      - dotfiles_node_lts_versions | select('string') | list | length == dotfiles_node_lts_versions | length
+      - dotfiles_node_lts_versions | select('match', '^v[0-9]+[.][0-9]+[.][0-9]+$') | list | length == dotfiles_node_lts_versions | length
+    fail_msg: Node.js release index contains no valid stable LTS versions.
+
+- name: select newest node lts version
+  ansible.builtin.set_fact:
+    dotfiles_node_resolved_version: "{{ dotfiles_node_lts_versions | community.general.version_sort | last | regex_replace('^v', '') }}"

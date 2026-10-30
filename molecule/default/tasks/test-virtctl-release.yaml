@@ -1,0 +1,35 @@
+---
+- name: initialize virtctl selection test result
+  ansible.builtin.set_fact:
+    dotfiles_test_rejected: false
+
+- name: validate fixture virtctl metadata
+  vars:
+    dotfiles_cli:
+      name: virtctl
+      version: latest
+    dotfiles_cli_resolved_version: v1.9.1
+    dotfiles_cli_architecture: "{{ dotfiles_test_case.architecture | default('amd64') }}"
+    dotfiles_test_assets:
+      - name: virtctl-v1.9.1-linux-amd64
+        digest: "sha256:{{ 'a' * 64 }}"
+      - name: virtctl-v1.9.1-linux-arm64
+        digest: "sha256:{{ 'b' * 64 }}"
+    dotfiles_virtctl_release_response:
+      json:
+        tag_name: "{{ dotfiles_test_case.release_tag | default('v1.9.1') }}"
+        draft: false
+        prerelease: false
+        assets: "{{ dotfiles_test_case.assets | default(dotfiles_test_assets) }}"
+  block:
+    - name: select fixture virtctl asset
+      ansible.builtin.include_tasks: "{{ dotfiles_test_role_directory }}/tasks/virtctl-release.yaml"
+  rescue:
+    - name: record rejected virtctl metadata
+      ansible.builtin.set_fact:
+        dotfiles_test_rejected: true
+
+- name: verify virtctl selection result
+  ansible.builtin.assert:
+    that:
+      - dotfiles_test_rejected == dotfiles_test_case.reject

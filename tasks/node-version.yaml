@@ -1,0 +1,24 @@
+---
+- name: validate requested node runtime
+  ansible.builtin.assert:
+    that:
+      - dotfiles_node_version is string
+      - dotfiles_node_version | length > 0
+    fail_msg: dotfiles_node_version requires lts or an exact stable Node.js version.
+
+- name: validate exact node version
+  when: dotfiles_node_version != 'lts'
+  block:
+    - name: parse node runtime version
+      ansible.builtin.assert:
+        that:
+          - (dotfiles_node_version | regex_replace('^v', '')) is match('^[0-9]+[.][0-9]+[.][0-9]+$')
+          - >-
+            (dotfiles_node_version | regex_replace('^v', ''))
+            is ansible.builtin.version(
+              dotfiles_node_version | regex_replace('^v', ''),
+              'eq', version_type='semver')
+  rescue:
+    - name: reject invalid node runtime version
+      ansible.builtin.fail:
+        msg: "dotfiles_node_version must be lts or an exact stable release, not {{ dotfiles_node_version }}."

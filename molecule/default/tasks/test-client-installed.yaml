@@ -1,0 +1,40 @@
+---
+- name: read installed cluster client state
+  ansible.builtin.slurp:
+    src: "/home/test/.cache/ansible-dotfiles/{{ dotfiles_test_client_name }}.json"
+  register: dotfiles_test_client_saved
+
+- name: decode installed cluster client state
+  ansible.builtin.set_fact:
+    dotfiles_test_client_state: "{{ dotfiles_test_client_saved.content | b64decode | from_json }}"
+
+- name: inspect installed cluster client
+  ansible.builtin.stat:
+    path: "/home/test/.local/bin/{{ dotfiles_test_client_name }}"
+    checksum_algorithm: sha256
+  register: dotfiles_test_client_binary
+
+- name: verify cluster client ownership and checksum
+  ansible.builtin.assert:
+    that:
+      - dotfiles_test_client_binary.stat.isreg | default(false)
+      - dotfiles_test_client_binary.stat.executable | default(false)
+      - dotfiles_test_client_binary.stat.pw_name == 'test'
+      - dotfiles_test_client_binary.stat.checksum == dotfiles_test_client_state.checksum
+      - dotfiles_test_client_state.version is match('^v[0-9]')
+      - dotfiles_test_client_state.architecture in ['amd64', 'arm64']
+
+- name: reapply pinned cluster client
+  ansible.builtin.include_tasks: "{{ dotfiles_test_role_directory }}/tasks/cli-tool.yaml"
+  vars:
+    dotfiles_cli:
+      name: "{{ dotfiles_test_client_name }}"
+      version: "{{ dotfiles_test_client_state.version }}"
+
+- name: verify pinned cluster client requires no acquisition
+  ansible.builtin.assert:
+    that:
+      - not dotfiles_cli_install_needed
+      - dotfiles_kubectl_checksum_response is not defined
+      - dotfiles_virtctl_release_response is not defined
+      - dotfiles_virtctl_download is not defined

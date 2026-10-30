@@ -1,0 +1,26 @@
+---
+- name: initialize node lts test result
+  ansible.builtin.set_fact:
+    dotfiles_test_rejected: false
+
+- name: resolve fixture node lts metadata
+  vars:
+    dotfiles_node_releases: "{{ dotfiles_test_case.releases }}"
+  block:
+    - name: select fixture lts release
+      ansible.builtin.include_tasks: "{{ dotfiles_test_role_directory }}/tasks/node-lts.yaml"
+  rescue:
+    - name: record rejected node lts metadata
+      ansible.builtin.set_fact:
+        dotfiles_test_rejected: true
+
+- name: verify node lts metadata validation result
+  ansible.builtin.assert:
+    that:
+      - dotfiles_test_rejected == dotfiles_test_case.reject
+
+- name: verify selected node lts release
+  ansible.builtin.assert:
+    that:
+      - dotfiles_node_resolved_version == dotfiles_test_case.expected
+  when: not dotfiles_test_case.reject

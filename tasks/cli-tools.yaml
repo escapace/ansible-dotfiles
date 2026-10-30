@@ -1,0 +1,14 @@
+---
+- name: install enabled cluster clients
+  ansible.builtin.include_tasks: cli-tool.yaml
+  loop:
+    - name: kubectl
+      enabled: "{{ dotfiles_kubectl_install | bool }}"
+      version: "{{ dotfiles_kubectl_version }}"
+    - name: virtctl
+      enabled: "{{ dotfiles_virtctl_install | bool }}"
+      version: "{{ dotfiles_virtctl_version }}"
+  loop_control:
+    loop_var: dotfiles_cli
+    label: "{{ dotfiles_cli.name }}"
+  when: dotfiles_cli.enabled
