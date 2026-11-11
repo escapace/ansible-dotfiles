@@ -60,7 +60,7 @@
 - name: allow {{ dotfiles_username }} to have passwordless sudo
   ansible.builtin.lineinfile:
     dest: /etc/sudoers.d/{{ dotfiles_username }}
-    mode: "0640"
+    mode: "0440"
     create: true
     state: present
     regexp: ^{{ dotfiles_username }}

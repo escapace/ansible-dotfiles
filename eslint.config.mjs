@@ -1,6 +1,7 @@
 // @ts-check
 
-import { escapace, compose } from 'eslint-config-escapace'
+import { defineConfig as compose } from 'eslint/config'
+import { escapace } from 'oxlint-config-escapace/eslint'
 
 export default compose(escapace(), {
   files: ['**/molecule.yml'],
