@@ -4,6 +4,9 @@
   vars:
     dotfiles_username: test
     dotfiles_nodenv_install: true
+    # Keep installation independent of Node releases preceding node-build definitions.
+    # LTS selection is covered by the fixed metadata fixtures in test-node.yaml.
+    dotfiles_node_version: 26.13.0
     dotfiles_kubectl_install: true
     dotfiles_virtctl_install: true
   roles:
